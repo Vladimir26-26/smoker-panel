@@ -1,0 +1,23 @@
+[
+  {
+    "name": "Сушка",
+    "stages": [
+      {"name": "Прогрев камеры", "target_cam": 40, "target_bat": 25, "duration_sec": 1800},
+      {"name": "Сушка продукта", "target_cam": 50, "target_bat": 35, "duration_sec": 3600}
+    ]
+  },
+  {
+    "name": "Горячее копчение",
+    "stages": [
+      {"name": "Разогрев", "target_cam": 60, "target_bat": 40, "duration_sec": 1200},
+      {"name": "Копчение", "target_cam": 75, "target_bat": 65, "duration_sec": 7200}
+    ]
+  },
+  {
+    "name": "Холодное копчение",
+    "stages": [
+      {"name": "Стабилизация", "target_cam": 22, "target_bat": 18, "duration_sec": 3600},
+      {"name": "Копчение", "target_cam": 24, "target_bat": 20, "duration_sec": 86400}
+    ]
+  }
+]
