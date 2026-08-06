@@ -141,11 +141,34 @@
 
   <p id="lastUpdate">Ожидание данных…</p>
 
-  <script>
-    // Вставь сюда свой URL из GitHub Pages
-    const BASE_URL = "https://ТВОЙ_USERNAME.github.io/smoker-panel/";
+    <script>
+    // --- НАСТРОЙКИ ДЛЯ ТЕСТА (можно менять) ---
+    const SIMULATED_TARGET_CAM = 75; // Цель камеры по умолчанию
+    const SIMULATED_TARGET_BAT = 55; // Цель продукта по умолчанию
 
-    function log(msg, type='info') {
+    // --- ИМИТАЦИЯ ДАННЫХ (вместо fetch с сервера) ---
+    function getSimulatedData() {
+      // Генерируем "реальные" колебания температуры
+      const noiseCam = (Math.random() - 0.5) * 4; // шум +/- 2 градуса
+      const noiseBat = (Math.random() - 0.5) * 3; // шум +/- 1.5 градуса
+      
+      // Имитируем нагрев: температура медленно растет к цели
+      // В реальном проекте эти значения придут от ESP32
+      const currentCam = Math.min(SIMULATED_TARGET_CAM + noiseCam, SIMULATED_TARGET_CAM + 5);
+      const currentBat = Math.min(SIMULATED_TARGET_BAT + noiseBat, SIMULATED_TARGET_BAT + 10);
+
+      return {
+        temp_cam: parseFloat(currentCam.toFixed(1)),
+        temp_bat: parseFloat(currentBat.toFixed(1)),
+        status: 'running', // Статус "работает"
+        stage_name: 'Копчение (нагрев)',
+        target_cam: SIMULATED_TARGET_CAM,
+        target_bat: SIMULATED_TARGET_BAT
+      };
+    }
+
+    // --- ЛОГИРОВАНИЕ (Журнал событий) ---
+    function log(msg, type = 'info') {
       const d = new Date().toLocaleTimeString();
       const div = document.createElement('div');
       div.className = 'log-entry ' + type;
@@ -155,66 +178,47 @@
       if (log.children.length > 20) log.lastElementChild.remove();
     }
 
-    async function updateData() {
-      try {
-        const res = await fetch(BASE_URL + 'data.txt');
-        if (res.ok) {
-          const text = await res.text();
-          const data = JSON.parse(text);
+    // --- ОБНОВЛЕНИЕ ИНТЕРФЕЙСА ---
+    function updateUI(data) {
+      document.getElementById('tempCam').innerText = data.temp_cam;
+      document.getElementById('tempBat').innerText = data.temp_bat;
 
-          document.getElementById('tempCam').innerText = data.temp_cam;
-          document.getElementById('tempBat').innerText = data.temp_bat;
-          
-          // прогресс-бары (пример: цель 60°C)
-          const targetCam = data.target_cam || 60;
-          const targetBat = data.target_bat || 40;
-          const pctCam = Math.min(100, Math.max(0, (data.temp_cam / targetCam) * 100));
-          const pctBat = Math.min(100, Math.max(0, (data.temp_bat / targetBat) * 100));
+      // Расчет прогресс-баров относительно цели
+      const pctCam = Math.min(100, Math.max(0, (data.temp_cam / data.target_cam) * 100));
+      const pctBat = Math.min(100, Math.max(0, (data.temp_bat / data.target_bat) * 100));
 
-          document.getElementById('barCam').style.width = pctCam + '%';
-          document.getElementById('barBat').style.width = pctBat + '%';
+      document.getElementById('barCam').style.width = pctCam + '%';
+      document.getElementById('barBat').style.width = pctBat + '%';
 
-          const statusBox = document.getElementById('statusBox');
-          if (data.status === 'running') {
-            statusBox.innerText = 'СТАТУС: РАБОТАЕТ';
-            statusBox.className = 'status-box status-running';
-          } else {
-            statusBox.innerText = 'СТАТУС: ОЖИДАНИЕ';
-            statusBox.className = 'status-box status-idle';
-          }
-
-          document.getElementById('stageInfo').innerText = 'Этап: ' + (data.stage_name || '—');
-          document.getElementById('lastUpdate').innerText = 'Обновлено: ' + new Date().toLocaleTimeString();
-        }
-      } catch (e) {
-        log('Ошибка связи с сервером', 'error');
+      const statusBox = document.getElementById('statusBox');
+      if (data.status === 'running') {
+        statusBox.innerText = 'СТАТУС: РАБОТАЕТ';
+        statusBox.className = 'status-box status-running';
+      } else {
+        statusBox.innerText = 'СТАТУС: ОЖИДАНИЕ';
+        statusBox.className = 'status-box status-idle';
       }
+
+      document.getElementById('stageInfo').innerText = 'Этап: ' + (data.stage_name || '—');
+      document.getElementById('lastUpdate').innerText = 'Обновлено: ' + new Date().toLocaleTimeString();
+      
+      log('Данные обновлены локально (симуляция)', 'info');
     }
 
-    async function loadRecipes() {
-      try {
-        const res = await fetch(BASE_URL + 'recipes.txt');
-        if (res.ok) {
-          const recipes = await res.json();
-          const list = document.getElementById('recipe-list');
-          list.innerHTML = '';
-          recipes.forEach(r => {
-            const div = document.createElement('div');
-            div.className = 'recipe-item';
-            div.innerHTML = `<span class="recipe-name ${r.active ? 'recipe-active' : ''}">${r.name}</span><span style="color:#64748b">${r.target_cam}°C / ${r.target_bat}°C</span>`;
-            div.onclick = () => selectRecipe(r.name);
-            list.appendChild(div);
-          });
-        }
-      } catch (e) { log('Ошибка загрузки рецептов', 'error'); }
+    // --- ЭМУЛЯЦИЯ РАБОТЫ СИСТЕМЫ ---
+    function startSimulationLoop() {
+      const data = getSimulatedData();
+      updateUI(data);
+      
+      // Меняем данные каждые 2 секунды для наглядности
+      setTimeout(startSimulationLoop, 2000);
     }
 
+    // --- ФУНКЦИИ УПРАВЛЕНИЯ (Кнопки) ---
     function sendCommand(cmd) {
-      fetch(BASE_URL + 'command.txt', {
-        method: 'PUT',
-        headers: {'Content-Type': 'text/plain'},
-        body: cmd
-      }).then(() => log('Команда: ' + cmd, 'info')).catch(e => log('Ошибка отправки', 'error'));
+      log('Команда отправлена: ' + cmd, 'info');
+      // Здесь в будущем будет реальный fetch() для ESP32
+      // Сейчас просто логируем, чтобы интерфейс не ломался
     }
 
     function selectRecipe(name) {
@@ -226,27 +230,54 @@
       const name = document.getElementById('newRecipeName').value.trim();
       const tCam = parseFloat(document.getElementById('targetCam').value);
       const tBat = parseFloat(document.getElementById('targetBat').value);
+      
       if (!name || isNaN(tCam) || isNaN(tBat)) {
         log('Заполни все поля', 'error');
         return;
       }
-      const payload = JSON.stringify({ name, target_cam: tCam, target_bat: tBat, active: true });
-      fetch(BASE_URL + 'recipes.txt', {
-        method: 'PUT',
-        headers: {'Content-Type': 'application/json'},
-        body: payload
-      }).then(() => {
-        document.getElementById('newRecipeName').value = '';
-        document.getElementById('targetCam').value = '';
-        document.getElementById('targetBat').value = '';
-        loadRecipes();
-        log('Рецепт добавлен', 'info');
-      }).catch(e => log('Ошибка сохранения', 'error'));
+
+      // В демо-режиме просто показываем успех, без записи на сервер
+      log('Рецепт "' + name + '" добавлен в локальную память', 'info');
+      
+      // Очищаем поля
+      document.getElementById('newRecipeName').value = '';
+      document.getElementById('targetCam').value = '';
+      document.getElementById('targetBat').value = '';
+      
+      // Перезагружаем список (в демо просто пишем в лог, что рецепт принят)
+      loadRecipesDemo();
     }
 
-    setInterval(updateData, 5000);
-    updateData();
-    loadRecipes();
+    // --- ДЕМО-СПИСОК РЕЦЕПТОВ (без файла recipes.txt) ---
+    const demoRecipes = [
+      { name: 'Горячее копчение', target_cam: 80, target_bat: 65, active: true },
+      { name: 'Холодное копчение', target_cam: 25, target_bat: 22, active: false },
+      { name: 'Запекание', target_cam: 120, target_bat: 85, active: false }
+    ];
+
+    function loadRecipesDemo() {
+      const list = document.getElementById('recipe-list');
+      list.innerHTML = '';
+      demoRecipes.forEach(r => {
+        const div = document.createElement('div');
+        div.className = 'recipe-item';
+        div.innerHTML = `<span class="recipe-name ${r.active ? 'recipe-active' : ''}">${r.name}</span><span style="color:#64748b">${r.target_cam}°C / ${r.target_bat}°C</span>`;
+        div.onclick = () => {
+          selectRecipe(r.name);
+          // Визуально подсвечиваем активный рецепт
+          demoRecipes.forEach(rec => rec.active = false);
+          r.active = true;
+          loadRecipesDemo();
+        };
+        list.appendChild(div);
+      });
+    }
+
+    // --- ЗАПУСК ---
+    document.addEventListener('DOMContentLoaded', () => {
+      loadRecipesDemo();
+      startSimulationLoop(); // Запускаем имитацию данных
+    });
   </script>
 </body>
 </html>
