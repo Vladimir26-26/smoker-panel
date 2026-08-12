@@ -8,11 +8,12 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
             font-family: 'Segoe UI', Roboto, Arial, sans-serif;
-            background: #eef2f7;
+            background: #e8ecf1;
             color: #1a1a2e;
             margin: 0;
-            padding: 12px;
+            padding: 10px;
             min-height: 100vh;
+            font-size: 14px;
         }
         .container { max-width: 1200px; margin: 0 auto; }
         
@@ -22,20 +23,20 @@
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 16px;
-            padding: 12px 20px;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding: 10px 16px;
             background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            border: 1px solid #dce1e8;
+            border-radius: 10px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            border: 1px solid #d0d5dd;
         }
-        .header h1 { margin: 0; font-size: 1.4rem; color: #1a1a2e; }
-        .header h1 span { color: #e67e22; }
+        .header h1 { margin: 0; font-size: 1.2rem; color: #1a1a2e; }
+        .header h1 span { color: #c0392b; }
         .connection-status {
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 0.8rem;
+            padding: 4px 14px;
+            border-radius: 16px;
+            font-size: 0.75rem;
             font-weight: 600;
         }
         .connection-status.online { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
@@ -44,153 +45,153 @@
         /* ===== ПАНЕЛЬ IP ===== */
         .ip-bar {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             align-items: center;
             flex-wrap: wrap;
             margin-bottom: 12px;
-            padding: 10px 16px;
+            padding: 8px 14px;
             background: #ffffff;
-            border-radius: 10px;
+            border-radius: 8px;
+            border: 1px solid #d0d5dd;
             box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-            border: 1px solid #dce1e8;
         }
         .ip-bar input {
             flex: 1;
-            min-width: 150px;
-            padding: 8px 12px;
-            background: #ffffff;
+            min-width: 120px;
+            padding: 6px 10px;
+            background: #f8f9fa;
             color: #1a1a2e;
-            border: 1px solid #dce1e8;
-            border-radius: 6px;
-            font-size: 0.9rem;
+            border: 1px solid #d0d5dd;
+            border-radius: 5px;
+            font-size: 0.85rem;
         }
-        .ip-bar input:focus { outline: none; border-color: #e67e22; }
-        .ip-bar .current-ip { font-size: 0.8rem; color: #888; }
+        .ip-bar input:focus { outline: none; border-color: #c0392b; }
+        .ip-bar .current-ip { font-size: 0.75rem; color: #666; }
         .ip-bar .current-ip.online { color: #27ae60; }
         .ip-bar .current-ip.offline { color: #e74c3c; }
         
         /* ===== СЕТКА СТАТУСА ===== */
         .status-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-            gap: 10px;
-            margin-bottom: 16px;
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: 8px;
+            margin-bottom: 12px;
         }
         .status-item {
             background: #ffffff;
-            padding: 12px 16px;
-            border-radius: 10px;
-            border: 1px solid #dce1e8;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #d0d5dd;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        .status-item .label { font-size: 0.65rem; text-transform: uppercase; color: #888; letter-spacing: 0.5px; }
-        .status-item .value { font-size: 1.5rem; font-weight: 700; color: #1a1a2e; line-height: 1.2; }
-        .status-item .value.small { font-size: 1.1rem; }
-        .status-item.heater-on { border-left: 4px solid #e74c3c; }
-        .status-item.heater-off { border-left: 4px solid #bdc3c7; }
-        .status-item .value.status-running { color: #27ae60; }
-        .status-item .value.status-error { color: #e74c3c; }
-        .status-item .value.status-done { color: #2980b9; }
+        .status-item .label { font-size: 0.6rem; text-transform: uppercase; color: #888; letter-spacing: 0.3px; }
+        .status-item .value { font-size: 1.2rem; font-weight: 700; color: #1a1a2e; line-height: 1.2; }
+        .status-item .value.small { font-size: 1rem; }
+        .status-item.heater-on { border-left: 3px solid #e74c3c; }
+        .status-item.heater-off { border-left: 3px solid #bdc3c7; }
         
         /* ===== КАРТОЧКИ ===== */
         .card {
             background: #ffffff;
-            border: 1px solid #dce1e8;
-            border-radius: 12px;
-            padding: 16px 20px;
-            margin-bottom: 16px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+            border: 1px solid #d0d5dd;
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
         }
         .card-title {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #e67e22;
-            margin-bottom: 10px;
+            letter-spacing: 0.8px;
+            color: #c0392b;
+            margin-bottom: 8px;
             font-weight: 700;
         }
         
         /* ===== КНОПКИ ===== */
-        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
         .btn {
-            padding: 10px 22px;
+            padding: 8px 16px;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             cursor: pointer;
-            transition: all 0.2s;
-            min-height: 44px;
-            min-width: 44px;
+            transition: all 0.15s;
+            min-height: 38px;
+            min-width: 38px;
         }
         .btn:active { transform: scale(0.96); }
-        .btn-primary { background: #3498db; color: #fff; }
-        .btn-primary:hover { background: #2980b9; }
+        .btn-primary { background: #2980b9; color: #fff; }
+        .btn-primary:hover { background: #1f6a9e; }
         .btn-success { background: #27ae60; color: #fff; }
-        .btn-success:hover { background: #219a52; }
+        .btn-success:hover { background: #1e8449; }
         .btn-danger { background: #e74c3c; color: #fff; }
         .btn-danger:hover { background: #c0392b; }
         .btn-warning { background: #f39c12; color: #fff; }
         .btn-warning:hover { background: #d68910; }
-        .btn-outline { background: transparent; color: #555; border: 1px solid #dce1e8; }
+        .btn-outline { background: transparent; color: #555; border: 1px solid #d0d5dd; }
         .btn-outline:hover { background: #f0f2f5; }
-        .btn-sm { padding: 6px 14px; font-size: 0.75rem; min-height: 32px; min-width: 32px; }
+        .btn-sm { padding: 4px 10px; font-size: 0.7rem; min-height: 28px; min-width: 28px; }
         
         /* ===== РЕЦЕПТЫ ===== */
         .recipe-selector {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             flex-wrap: wrap;
             align-items: center;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
         .recipe-selector select {
             flex: 1;
-            min-width: 150px;
-            padding: 8px 12px;
+            min-width: 120px;
+            padding: 6px 10px;
             background: #ffffff;
             color: #1a1a2e;
-            border: 1px solid #dce1e8;
-            border-radius: 6px;
-            font-size: 0.9rem;
+            border: 1px solid #d0d5dd;
+            border-radius: 5px;
+            font-size: 0.85rem;
         }
-        .recipe-selector select:focus { outline: none; border-color: #e67e22; }
+        .recipe-selector select:focus { outline: none; border-color: #c0392b; }
         .recipe-selector input {
-            padding: 8px 12px;
+            padding: 6px 10px;
             background: #ffffff;
             color: #1a1a2e;
-            border: 1px solid #dce1e8;
-            border-radius: 6px;
-            font-size: 0.9rem;
+            border: 1px solid #d0d5dd;
+            border-radius: 5px;
+            font-size: 0.85rem;
         }
-        .recipe-selector input:focus { outline: none; border-color: #e67e22; }
-        .recipe-selector input[type="number"] { width: 70px; }
-        .recipe-selector input[type="text"] { min-width: 120px; flex: 1; }
-        .recipe-selector label { font-size: 0.8rem; color: #888; }
+        .recipe-selector input:focus { outline: none; border-color: #c0392b; }
+        .recipe-selector input[type="number"] { width: 60px; }
+        .recipe-selector input[type="text"] { min-width: 100px; flex: 1; }
+        .recipe-selector label { font-size: 0.75rem; color: #666; }
         
         /* ===== ТАБЛИЦА (ЧЁТКИЕ ГРАНИЦЫ) ===== */
-        .table-wrap { overflow-x: auto; margin: 8px 0; }
+        .table-wrap { overflow-x: auto; margin: 6px 0; -webkit-overflow-scrolling: touch; }
         .stage-table {
-            min-width: 700px;
+            min-width: 680px;
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.82rem;
+            font-size: 0.78rem;
             background: #ffffff;
+            border: 1px solid #d0d5dd;
         }
         .stage-table th {
-            background: #f8f9fa;
+            background: #f0f2f5;
             color: #1a1a2e;
-            padding: 10px 8px;
+            padding: 8px 6px;
             text-align: center;
             font-weight: 700;
-            font-size: 0.7rem;
+            font-size: 0.6rem;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border: 1px solid #dce1e8;
+            letter-spacing: 0.3px;
+            border: 1px solid #d0d5dd;
+            position: sticky;
+            top: 0;
         }
         .stage-table td {
-            border: 1px solid #dce1e8;
-            padding: 8px 6px;
+            border: 1px solid #d0d5dd;
+            padding: 6px 4px;
             text-align: center;
             vertical-align: middle;
             background: #ffffff;
@@ -201,30 +202,30 @@
         .stage-table input, .stage-table select {
             background: #ffffff;
             color: #1a1a2e;
-            border: 1px solid #dce1e8;
-            border-radius: 4px;
-            padding: 4px 6px;
-            font-size: 0.75rem;
+            border: 1px solid #d0d5dd;
+            border-radius: 3px;
+            padding: 3px 4px;
+            font-size: 0.7rem;
             width: 100%;
-            max-width: 70px;
+            max-width: 60px;
         }
-        .stage-table input:focus, .stage-table select:focus { outline: none; border-color: #e67e22; }
-        .stage-table input[type="text"] { max-width: 90px; }
-        .stage-table input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: #e67e22; }
-        .stage-table select { max-width: 80px; }
+        .stage-table input:focus, .stage-table select:focus { outline: none; border-color: #c0392b; }
+        .stage-table input[type="text"] { max-width: 80px; }
+        .stage-table input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: #c0392b; }
+        .stage-table select { max-width: 70px; }
         
         .stage-table .status-dot {
             display: inline-block;
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            margin-left: 4px;
-            border: 1px solid #dce1e8;
+            margin-left: 3px;
+            border: 1px solid #d0d5dd;
         }
-        .stage-table .status-dot.active { background: #27ae60; }
-        .stage-table .status-dot.done { background: #3498db; }
-        .stage-table .status-dot.error { background: #e74c3c; }
-        .stage-table .status-dot.waiting { background: #bdc3c7; }
+        .stage-table .status-dot.active { background: #27ae60; border-color: #27ae60; }
+        .stage-table .status-dot.done { background: #2980b9; border-color: #2980b9; }
+        .stage-table .status-dot.error { background: #e74c3c; border-color: #e74c3c; }
+        .stage-table .status-dot.waiting { background: #bdc3c7; border-color: #bdc3c7; }
         
         .stage-table .stage-active-row td { background: #eafaf1; }
         .stage-table .stage-done-row td { background: #ebf5fb; }
@@ -233,23 +234,23 @@
         /* ===== ДЫМОГЕНЕРАТОР ===== */
         .smoke-panel {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            gap: 8px;
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            gap: 6px;
             background: #f8f9fa;
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-top: 8px;
-            border: 1px solid #dce1e8;
+            padding: 10px 14px;
+            border-radius: 6px;
+            margin-top: 6px;
+            border: 1px solid #d0d5dd;
         }
         .smoke-item {
             text-align: center;
-            padding: 8px;
-            border-radius: 6px;
+            padding: 6px;
+            border-radius: 5px;
             background: #ffffff;
-            border: 1px solid #dce1e8;
+            border: 1px solid #d0d5dd;
         }
-        .smoke-item .label { font-size: 0.6rem; text-transform: uppercase; color: #888; }
-        .smoke-item .state { font-size: 1.1rem; font-weight: 600; color: #1a1a2e; }
+        .smoke-item .label { font-size: 0.55rem; text-transform: uppercase; color: #888; letter-spacing: 0.3px; }
+        .smoke-item .state { font-size: 1rem; font-weight: 600; color: #1a1a2e; }
         .smoke-item .state.on { color: #27ae60; }
         .smoke-item .state.off { color: #bdc3c7; }
         .smoke-item .state.error { color: #e74c3c; }
@@ -258,66 +259,73 @@
         /* ===== СТАТУС БАР ===== */
         .stage-status-bar {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             flex-wrap: wrap;
             align-items: center;
-            margin: 8px 0 12px 0;
-            padding: 8px 12px;
+            margin: 6px 0 10px 0;
+            padding: 6px 10px;
             background: #f8f9fa;
-            border-radius: 8px;
-            border: 1px solid #dce1e8;
+            border-radius: 6px;
+            border: 1px solid #d0d5dd;
         }
         .stage-status-bar .dot {
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
             display: inline-block;
             border: 2px solid #fff;
-            box-shadow: 0 0 0 1px #dce1e8;
+            box-shadow: 0 0 0 1px #d0d5dd;
         }
         .stage-status-bar .dot.active { background: #27ae60; }
-        .stage-status-bar .dot.done { background: #3498db; }
+        .stage-status-bar .dot.done { background: #2980b9; }
         .stage-status-bar .dot.error { background: #e74c3c; }
         .stage-status-bar .dot.waiting { background: #bdc3c7; }
-        .stage-status-bar .label { font-size: 0.7rem; color: #888; font-weight: 600; margin-right: 6px; }
-        .stage-status-bar .stage-label { font-size: 0.7rem; color: #555; }
+        .stage-status-bar .label { font-size: 0.65rem; color: #666; font-weight: 600; margin-right: 4px; }
+        .stage-status-bar .stage-label { font-size: 0.65rem; color: #555; }
         
         /* ===== ЛОГ ===== */
         .log-panel {
             background: #f8f9fa;
-            border-radius: 8px;
-            padding: 10px 14px;
-            max-height: 160px;
+            border-radius: 6px;
+            padding: 8px 12px;
+            max-height: 140px;
             overflow-y: auto;
             font-family: 'Courier New', monospace;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: #555;
-            margin-top: 8px;
-            border: 1px solid #dce1e8;
+            margin-top: 6px;
+            border: 1px solid #d0d5dd;
         }
-        .log-panel .entry { padding: 3px 0; border-bottom: 1px solid #e8ecf1; }
+        .log-panel .entry { padding: 2px 0; border-bottom: 1px solid #e8ecf1; }
         .log-panel .entry:last-child { border-bottom: none; }
         .log-panel .entry.error { color: #e74c3c; }
         .log-panel .entry.success { color: #27ae60; }
         .log-panel .entry.warn { color: #f39c12; }
         
         /* ===== АДАПТИВ ===== */
-        @media (max-width: 600px) {
-            .status-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
-            .status-item .value { font-size: 1.1rem; }
-            .status-item { padding: 8px 12px; }
-            .header h1 { font-size: 1.0rem; }
-            .btn { padding: 8px 14px; font-size: 0.8rem; min-height: 38px; }
-            .stage-table { font-size: 0.65rem; min-width: 560px; }
-            .stage-table input, .stage-table select { font-size: 0.6rem; max-width: 50px; padding: 2px; }
-            .stage-table input[type="text"] { max-width: 60px; }
+        @media (max-width: 768px) {
+            body { padding: 6px; font-size: 13px; }
+            .status-grid { grid-template-columns: repeat(3, 1fr); gap: 5px; }
+            .status-item .value { font-size: 1rem; }
+            .status-item { padding: 6px 8px; }
+            .header h1 { font-size: 1rem; }
+            .btn { padding: 6px 12px; font-size: 0.75rem; min-height: 34px; }
+            .stage-table { font-size: 0.65rem; min-width: 550px; }
+            .stage-table input, .stage-table select { font-size: 0.6rem; max-width: 45px; padding: 2px; }
+            .stage-table input[type="text"] { max-width: 55px; }
             .smoke-panel { grid-template-columns: repeat(2, 1fr); }
-            .recipe-selector input[type="text"] { min-width: 80px; }
+            .recipe-selector input[type="text"] { min-width: 70px; }
             .ip-bar { flex-direction: column; align-items: stretch; }
         }
-        @media (max-width: 400px) {
+        @media (max-width: 480px) {
             .status-grid { grid-template-columns: repeat(2, 1fr); }
             .header { flex-direction: column; align-items: stretch; }
+            .stage-table { font-size: 0.55rem; min-width: 480px; }
+            .stage-table th, .stage-table td { padding: 4px 3px; }
+            .stage-table input, .stage-table select { max-width: 35px; font-size: 0.55rem; }
+            .stage-table input[type="text"] { max-width: 45px; }
+            .recipe-selector { flex-direction: column; align-items: stretch; }
+            .recipe-selector input[type="number"] { width: 100%; }
         }
     </style>
 </head>
@@ -329,26 +337,26 @@
         </div>
 
         <div class="ip-bar">
-            <span style="font-size:0.8rem; color:#888;">🔗 IP:</span>
-            <input type="text" id="ipInput" placeholder="192.168.137.57">
+            <span style="font-size:0.75rem; color:#666;">🔗 IP:</span>
+            <input type="text" id="ipInput" placeholder="192.168.137.57" value="192.168.137.57">
             <button class="btn btn-primary btn-sm" onclick="setIP()">Подключить</button>
             <button class="btn btn-outline btn-sm" onclick="autoFindESP()">🔍 Найти</button>
-            <span class="current-ip" id="currentIP"></span>
+            <span class="current-ip" id="currentIP">192.168.137.57 (сохранён)</span>
         </div>
 
         <div class="status-grid">
-            <div class="status-item"><div class="label">Статус</div><div class="value" id="sStatus">--</div></div>
+            <div class="status-item"><div class="label">Статус</div><div class="value" id="sStatus">Ожидание</div></div>
             <div class="status-item"><div class="label">Этап</div><div class="value small" id="sStage">--</div></div>
             <div class="status-item"><div class="label">Осталось</div><div class="value small" id="sTimeLeft">--</div></div>
-            <div class="status-item"><div class="label">Камера</div><div class="value" id="sCam">--°C</div></div>
-            <div class="status-item"><div class="label">Батон</div><div class="value" id="sBat">--°C</div></div>
-            <div class="status-item"><div class="label">Дым</div><div class="value" id="sSmk">--°C</div></div>
+            <div class="status-item"><div class="label">Камера</div><div class="value" id="sCam">0.0°C</div></div>
+            <div class="status-item"><div class="label">Батон</div><div class="value" id="sBat">0.0°C</div></div>
+            <div class="status-item"><div class="label">Дым</div><div class="value" id="sSmk">0.0°C</div></div>
             <div class="status-item" id="heaterStatus"><div class="label">ТЭН</div><div class="value small" id="sHeater">⏸ Выкл</div></div>
         </div>
 
         <div class="card">
             <div class="card-title">💨 Дымогенератор</div>
-            <div class="smoke-panel" id="smokePanel">
+            <div class="smoke-panel">
                 <div class="smoke-item"><div class="label">Заслонка</div><div class="state off" id="smokeSolenoid">🔒 Закрыта</div></div>
                 <div class="smoke-item"><div class="label">Вентилятор</div><div class="state off" id="smokeFan">⏸ Выкл</div></div>
                 <div class="smoke-item"><div class="label">Свеча</div><div class="state off" id="smokeGlow">⏸ Выкл</div></div>
@@ -372,13 +380,13 @@
             <div class="card-title">📋 Рецепты</div>
             <div class="recipe-selector">
                 <label>Рецепт:</label>
-                <select id="recipeSelect" onchange="loadRecipe(parseInt(this.value))"></select>
+                <select id="recipeSelect"></select>
                 <label>Название:</label>
-                <input type="text" id="recipeName" placeholder="Название">
+                <input type="text" id="recipeName" value="Грудинка томленая">
                 <label>Макс.темп:</label>
-                <input type="number" id="maxTemp" step="0.5">
+                <input type="number" id="maxTemp" step="0.5" value="74">
                 <label>Дельта:</label>
-                <input type="number" id="deltaVal" step="0.5">
+                <input type="number" id="deltaVal" step="0.5" value="18">
             </div>
 
             <div class="stage-status-bar" id="stageStatusBar">
@@ -386,7 +394,7 @@
             </div>
 
             <div class="table-wrap">
-                <table class="stage-table" id="stageTable">
+                <table class="stage-table">
                     <thead><tr>
                         <th>#</th><th>Название</th><th>Актив</th><th>Tкам</th><th>Tбат</th>
                         <th>Время(ч)</th><th>Дым</th><th>Вода</th><th>Реж.охл</th>
@@ -395,24 +403,24 @@
                     <tbody id="stageBody"></tbody>
                 </table>
             </div>
-            <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
                 <button class="btn btn-outline btn-sm" onclick="addStage()">➕ Добавить этап</button>
                 <button class="btn btn-outline btn-sm" onclick="removeLastStage()">✕ Удалить последний</button>
-                <span style="color:#888; font-size:0.75rem;">(всего 5 этапов)</span>
+                <span style="color:#888; font-size:0.7rem;">(всего 5 этапов)</span>
             </div>
         </div>
 
         <div class="card">
             <div class="card-title">📜 Журнал</div>
             <div class="log-panel" id="logPanel"><div id="logContent"></div></div>
-            <div style="font-size:0.65rem; color:#aaa; margin-top:6px;" id="lastUpdate">Ожидание данных...</div>
+            <div style="font-size:0.6rem; color:#999; margin-top:4px;" id="lastUpdate">Ожидание данных...</div>
         </div>
     </div>
 
     <script>
         // ==================== КОНФИГ ====================
-        let ESP_IP = localStorage.getItem('esp_ip') || '';
-        let API_BASE = ESP_IP ? `http://${ESP_IP}` : '';
+        let ESP_IP = localStorage.getItem('esp_ip') || '192.168.137.57';
+        let API_BASE = `http://${ESP_IP}`;
         let recipes = [];
         let currentRecipeIndex = 0;
         let isRunning = false;
@@ -443,7 +451,6 @@
         }
 
         async function fetchAPI(url, options = {}) {
-            if (!API_BASE) throw new Error('Не указан IP адрес');
             try {
                 const response = await fetch(`${API_BASE}${url}`, {
                     ...options,
@@ -517,14 +524,11 @@
         // ==================== УПРАВЛЕНИЕ IP ====================
         function setIP() {
             const ip = document.getElementById('ipInput').value.trim();
-            if (!ip) {
-                addLog('❌ Введите IP адрес', 'error');
-                return;
-            }
+            if (!ip) { addLog('❌ Введите IP адрес', 'error'); return; }
             ESP_IP = ip;
             API_BASE = `http://${ip}`;
             localStorage.setItem('esp_ip', ip);
-            document.getElementById('currentIP').textContent = `📍 ${ip}`;
+            document.getElementById('currentIP').textContent = `📍 ${ip} (сохранён)`;
             document.getElementById('currentIP').className = 'current-ip';
             addLog(`🔗 Подключение к ${ip}...`, 'info');
             if (statusInterval) clearInterval(statusInterval);
@@ -541,9 +545,7 @@
                 '192.168.0.100',
                 '192.168.0.101',
                 '192.168.137.1',
-                '192.168.137.100',
-                'koptilnya.local',
-                'smoker.local'
+                'koptilnya.local'
             ];
 
             for (const ip of ips) {
@@ -554,7 +556,6 @@
                         signal: controller.signal
                     });
                     clearTimeout(timeout);
-
                     if (response.ok) {
                         document.getElementById('ipInput').value = ip;
                         ESP_IP = ip;
@@ -568,9 +569,7 @@
                         statusInterval = setInterval(updateStatus, 1500);
                         return;
                     }
-                } catch (e) {
-                    // Пробуем следующий
-                }
+                } catch (e) {}
             }
             addLog('❌ ESP32 не найдена. Введите IP вручную.', 'error');
             document.getElementById('currentIP').className = 'current-ip offline';
@@ -578,10 +577,6 @@
 
         // ==================== РЕЦЕПТЫ ====================
         async function loadRecipesFromESP() {
-            if (!API_BASE) {
-                addLog('⚠️ Сначала укажите IP адрес', 'warn');
-                return;
-            }
             try {
                 const data = await fetchAPI('/api/recipes');
                 recipes = data.recipes || [];
@@ -595,7 +590,7 @@
                     recipes = generateDemoRecipes();
                     fillRecipeSelect();
                     loadRecipe(0);
-                    addLog('💾 Используются демо-рецепты (ESP не найдена)', 'warn');
+                    addLog('💾 Демо-рецепты (ESP не найдена)', 'warn');
                 }
             }
         }
@@ -611,18 +606,6 @@
                     { active: true, name: 'Ферментация', targetCameraTemp: 50, targetBatonTemp: 50, durationHours: 0.5, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 },
                     { active: true, name: 'Томление', targetCameraTemp: 73, targetBatonTemp: 73, durationHours: 6, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 },
                     { active: true, name: 'Охлаждение', targetCameraTemp: 15, targetBatonTemp: 15, durationHours: 0, smokeOn: false, waterOn: true, coolMode: 1, coolTargetTemp: 15, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 }
-                ]
-            },
-            {
-                name: 'Колбаса в/к',
-                maxCameraTemp: 75,
-                deltaCelsius: 18,
-                stages: [
-                    { active: true, name: 'Сушка', targetCameraTemp: 55, targetBatonTemp: 45, durationHours: 0, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 },
-                    { active: true, name: 'Дымление', targetCameraTemp: 50, targetBatonTemp: 50, durationHours: 2, smokeOn: true, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: true, holdMinutes: 30 },
-                    { active: true, name: 'Варка', targetCameraTemp: 75, targetBatonTemp: 72, durationHours: 0, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 },
-                    { active: true, name: 'Охлаждение', targetCameraTemp: 25, targetBatonTemp: 15, durationHours: 0, smokeOn: false, waterOn: false, coolMode: 3, coolTargetTemp: 15, coolTimeoutMin: 40, requireHold: false, holdMinutes: 0 },
-                    { active: true, name: 'Финиш', targetCameraTemp: 15, targetBatonTemp: 15, durationHours: 0, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 }
                 ]
             }];
         }
@@ -659,11 +642,11 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${i+1}<span class="status-dot waiting"></span></td>
-                    <td><input type="text" class="stage-name" value="${s.name||''}" data-idx="${i}" style="max-width:90px;"></td>
+                    <td><input type="text" class="stage-name" value="${s.name||''}" data-idx="${i}" style="max-width:80px;"></td>
                     <td><input type="checkbox" class="stage-active" ${s.active?'checked':''} data-idx="${i}"></td>
-                    <td><input type="number" class="stage-cam" step="0.5" value="${s.targetCameraTemp||0}" data-idx="${i}" style="max-width:60px;"></td>
-                    <td><input type="number" class="stage-bat" step="0.5" value="${s.targetBatonTemp||0}" data-idx="${i}" style="max-width:60px;"></td>
-                    <td><input type="number" class="stage-dur" step="0.1" value="${s.durationHours||0}" data-idx="${i}" style="max-width:55px;"></td>
+                    <td><input type="number" class="stage-cam" step="0.5" value="${s.targetCameraTemp||0}" data-idx="${i}" style="max-width:55px;"></td>
+                    <td><input type="number" class="stage-bat" step="0.5" value="${s.targetBatonTemp||0}" data-idx="${i}" style="max-width:55px;"></td>
+                    <td><input type="number" class="stage-dur" step="0.1" value="${s.durationHours||0}" data-idx="${i}" style="max-width:50px;"></td>
                     <td><select class="stage-smoke" data-idx="${i}">
                         <option value="1" ${s.smokeOn?'selected':''}>ДА</option>
                         <option value="0" ${!s.smokeOn?'selected':''}>НЕТ</option>
@@ -678,14 +661,14 @@
                         <option value="2" ${s.coolMode===2?'selected':''}>Имп</option>
                         <option value="3" ${s.coolMode===3?'selected':''}>Имп+Т</option>
                     </select></td>
-                    <td><input type="number" class="stage-cooltarget" step="0.5" value="${s.coolTargetTemp||0}" data-idx="${i}" style="max-width:55px;"></td>
-                    <td><input type="number" class="stage-cooltimeout" value="${s.coolTimeoutMin||0}" data-idx="${i}" style="max-width:50px;"></td>
+                    <td><input type="number" class="stage-cooltarget" step="0.5" value="${s.coolTargetTemp||0}" data-idx="${i}" style="max-width:50px;"></td>
+                    <td><input type="number" class="stage-cooltimeout" value="${s.coolTimeoutMin||0}" data-idx="${i}" style="max-width:45px;"></td>
                     <td><select class="stage-hold" data-idx="${i}">
                         <option value="1" ${s.requireHold?'selected':''}>ДА</option>
                         <option value="0" ${!s.requireHold?'selected':''}>НЕТ</option>
                     </select></td>
-                    <td><input type="number" class="stage-holdmin" step="0.5" value="${s.holdMinutes||0}" data-idx="${i}" style="max-width:50px;"></td>
-                    <td><button class="btn btn-outline btn-sm" onclick="removeStage(${i})" ${i<2?'disabled':''} style="padding:2px 6px; min-height:24px; min-width:24px; font-size:0.7rem;">✕</button></td>
+                    <td><input type="number" class="stage-holdmin" step="0.5" value="${s.holdMinutes||0}" data-idx="${i}" style="max-width:45px;"></td>
+                    <td><button class="btn btn-outline btn-sm" onclick="removeStage(${i})" ${i<2?'disabled':''} style="padding:2px 6px; min-height:24px; min-width:24px; font-size:0.65rem;">✕</button></td>
                 `;
                 tbody.appendChild(tr);
             }
@@ -881,7 +864,7 @@
                 isRunning = true;
                 document.getElementById('btnRun').style.display = 'none';
                 document.getElementById('btnStop').style.display = 'inline-block';
-                addLog('▶️ Запуск (демо-режим)', 'info');
+                addLog('▶️ Запуск (демо)', 'info');
                 playSuccess();
             }
         }
@@ -908,7 +891,7 @@
             try {
                 const data = await fetchAPI('/api/status');
 
-                document.getElementById('sStatus').textContent = data.status || '--';
+                document.getElementById('sStatus').textContent = data.status || 'Ожидание';
                 document.getElementById('sStage').textContent = data.stage || '--';
                 document.getElementById('sCam').textContent = (data.cam || 0).toFixed(1) + '°C';
                 document.getElementById('sBat').textContent = (data.bat || 0).toFixed(1) + '°C';
@@ -1017,19 +1000,6 @@
 
             } catch (e) {
                 setConnStatus(false, '❌ ' + e.message);
-                if (!document.getElementById('sCam').textContent.includes('°')) {
-                    const now = Date.now() / 1000;
-                    const wave = Math.sin(now / 30) * 3;
-                    document.getElementById('sStatus').textContent = isRunning ? 'Работает' : 'Ожидание';
-                    document.getElementById('sStage').textContent = isRunning ? 'Дымление' : '--';
-                    document.getElementById('sCam').textContent = (70 + wave).toFixed(1) + '°C';
-                    document.getElementById('sBat').textContent = (55 + wave * 0.5).toFixed(1) + '°C';
-                    document.getElementById('sSmk').textContent = (45 + wave * 0.3).toFixed(1) + '°C';
-                    if (isRunning) {
-                        document.getElementById('btnRun').style.display = 'none';
-                        document.getElementById('btnStop').style.display = 'inline-block';
-                    }
-                }
             }
         }
 
@@ -1040,11 +1010,9 @@
                 document.getElementById('currentIP').textContent = `📍 ${savedIP} (сохранён)`;
                 ESP_IP = savedIP;
                 API_BASE = `http://${savedIP}`;
-                loadRecipesFromESP();
-                statusInterval = setInterval(updateStatus, 1500);
-            } else {
-                autoFindESP();
             }
+            loadRecipesFromESP();
+            statusInterval = setInterval(updateStatus, 1500);
             const soundState = localStorage.getItem('sound_enabled');
             if (soundState !== null) {
                 soundEnabled = soundState === 'true';
