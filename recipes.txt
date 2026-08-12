@@ -1,23 +1,86 @@
-[
-  {
-    "name": "Сушка",
-    "stages": [
-      {"name": "Прогрев камеры", "target_cam": 40, "target_bat": 25, "duration_sec": 1800},
-      {"name": "Сушка продукта", "target_cam": 50, "target_bat": 35, "duration_sec": 3600}
-    ]
-  },
-  {
-    "name": "Горячее копчение",
-    "stages": [
-      {"name": "Разогрев", "target_cam": 60, "target_bat": 40, "duration_sec": 1200},
-      {"name": "Копчение", "target_cam": 75, "target_bat": 65, "duration_sec": 7200}
-    ]
-  },
-  {
-    "name": "Холодное копчение",
-    "stages": [
-      {"name": "Стабилизация", "target_cam": 22, "target_bat": 18, "duration_sec": 3600},
-      {"name": "Копчение", "target_cam": 24, "target_bat": 20, "duration_sec": 86400}
-    ]
-  }
-]
+{
+  "recipes": [
+    {
+      "name": "Грудинка томленая",
+      "maxCameraTemp": 74,
+      "deltaCelsius": 18,
+      "stages": [
+        {
+          "active": true,
+          "name": "Подсушка",
+          "targetCameraTemp": 18,
+          "targetBatonTemp": 45,
+          "durationHours": 0,
+          "smokeOn": false,
+          "waterOn": false,
+          "maxDelta": 18,
+          "coolMode": 0,
+          "coolTargetTemp": 0,
+          "coolTimeoutMin": 0,
+          "requireHold": false,
+          "holdMinutes": 0
+        },
+        {
+          "active": true,
+          "name": "Дымление",
+          "targetCameraTemp": 45,
+          "targetBatonTemp": 0,
+          "durationHours": 1,
+          "smokeOn": true,
+          "waterOn": false,
+          "maxDelta": 18,
+          "coolMode": 0,
+          "coolTargetTemp": 0,
+          "coolTimeoutMin": 0,
+          "requireHold": false,
+          "holdMinutes": 0
+        },
+        {
+          "active": true,
+          "name": "Ферментация",
+          "targetCameraTemp": 50,
+          "targetBatonTemp": 50,
+          "durationHours": 0.5,
+          "smokeOn": false,
+          "waterOn": false,
+          "maxDelta": 18,
+          "coolMode": 0,
+          "coolTargetTemp": 0,
+          "coolTimeoutMin": 0,
+          "requireHold": false,
+          "holdMinutes": 0
+        },
+        {
+          "active": true,
+          "name": "Томление",
+          "targetCameraTemp": 73,
+          "targetBatonTemp": 73,
+          "durationHours": 6,
+          "smokeOn": false,
+          "waterOn": false,
+          "maxDelta": 18,
+          "coolMode": 0,
+          "coolTargetTemp": 0,
+          "coolTimeoutMin": 0,
+          "requireHold": false,
+          "holdMinutes": 0
+        },
+        {
+          "active": true,
+          "name": "Охлаждение",
+          "targetCameraTemp": 15,
+          "targetBatonTemp": 15,
+          "durationHours": 0,
+          "smokeOn": false,
+          "waterOn": true,
+          "maxDelta": 0,
+          "coolMode": 1,
+          "coolTargetTemp": 15,
+          "coolTimeoutMin": 0,
+          "requireHold": false,
+          "holdMinutes": 0
+        }
+      ]
+    }
+  ]
+}
