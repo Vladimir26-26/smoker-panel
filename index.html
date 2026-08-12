@@ -77,11 +77,6 @@
             font-weight: 600;
         }
         
-        /* ===== ПРОГРЕСС-БАРЫ ===== */
-        .progress-wrap { margin-top: 6px; height: 4px; background: #2a2e38; border-radius: 2px; overflow: hidden; }
-        .progress-wrap .fill { height: 100%; background: #00a8cc; width: 0%; transition: width 0.5s; }
-        .progress-wrap .fill.danger { background: #ff5252; }
-        
         /* ===== КНОПКИ ===== */
         .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
         .btn {
@@ -105,7 +100,6 @@
         .btn-outline { background: transparent; color: #e2e8f0; border: 1px solid #4a4e58; }
         .btn-outline:hover { background: #2a2e38; }
         .btn-sm { padding: 6px 12px; font-size: 0.75rem; min-height: 32px; min-width: 32px; }
-        .btn-block { width: 100%; }
         
         /* ===== РЕЦЕПТЫ ===== */
         .recipe-list { max-height: 240px; overflow-y: auto; }
@@ -166,6 +160,7 @@
             width: 10px;
             height: 10px;
             border-radius: 50%;
+            margin-left: 4px;
         }
         .stage-table .status-dot.active { background: #4ade80; }
         .stage-table .status-dot.done { background: #00a8cc; }
@@ -231,7 +226,7 @@
                 <button class="btn btn-success" id="btnRun" onclick="runRecipe()">▶ Запустить</button>
                 <button class="btn btn-danger" id="btnStop" onclick="stopRecipe()" style="display:none;">⏹ Стоп</button>
                 <button class="btn btn-primary" onclick="saveRecipe()">💾 Сохранить</button>
-                <button class="btn btn-outline btn-sm" onclick="loadRecipesFromESP()">🔄 Обновить рецепты</button>
+                <button class="btn btn-outline btn-sm" onclick="loadRecipesFromESP()">🔄 Обновить</button>
             </div>
         </div>
 
@@ -325,8 +320,7 @@
                 setConnStatus(true, '✅ Онлайн');
                 addLog('Рецепты загружены (' + recipes.length + ' шт.)', 'success');
             } catch (e) {
-                addLog('Ошибка загрузки рецептов: ' + e.message, 'error');
-                // Демо-режим, если ESP недоступна
+                addLog('Ошибка загрузки: ' + e.message, 'error');
                 if (!recipes.length) {
                     recipes = generateDemoRecipes();
                     fillRecipeSelect();
@@ -381,7 +375,7 @@
                 const s = stages[i] || { active: false, name: 'Этап '+(i+1), targetCameraTemp: 0, targetBatonTemp: 0, durationHours: 0, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 };
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${i+1}</td>
+                    <td>${i+1}<span class="status-dot waiting"></span></td>
                     <td><input type="text" class="stage-name" value="${s.name||''}" data-idx="${i}" style="max-width:80px;"></td>
                     <td><input type="checkbox" class="stage-active" ${s.active?'checked':''} data-idx="${i}"></td>
                     <td><input type="number" class="stage-cam" step="0.5" value="${s.targetCameraTemp||0}" data-idx="${i}" style="max-width:55px;"></td>
@@ -487,10 +481,9 @@
                 }
             } catch (e) {
                 addLog('❌ Ошибка сохранения: ' + e.message, 'error');
-                // Демо-сохранение локально
                 recipes[currentRecipeIndex] = data;
                 fillRecipeSelect();
-                addLog('💾 Рецепт сохранён локально (демо)', 'info');
+                addLog('💾 Рецепт сохранён локально', 'info');
             }
         }
 
@@ -503,15 +496,14 @@
                     isRunning = true;
                     document.getElementById('btnRun').style.display = 'none';
                     document.getElementById('btnStop').style.display = 'inline-block';
-                    addLog('▶️ Запущен рецепт: ' + (recipes[idx]?.name || '#'+idx), 'success');
+                    addLog('▶️ Запущен: ' + (recipes[idx]?.name || '#'+idx), 'success');
                 }
             } catch (e) {
                 addLog('❌ Ошибка запуска: ' + e.message, 'error');
-                // Демо-режим
                 isRunning = true;
                 document.getElementById('btnRun').style.display = 'none';
                 document.getElementById('btnStop').style.display = 'inline-block';
-                addLog('▶️ Запуск (демо-режим)', 'info');
+                addLog('▶️ Запуск (демо)', 'info');
             }
         }
 
@@ -524,7 +516,6 @@
                 addLog('⏹ Остановлено', 'warn');
             } catch (e) {
                 addLog('❌ Ошибка остановки: ' + e.message, 'error');
-                // Демо-режим
                 isRunning = false;
                 document.getElementById('btnRun').style.display = 'inline-block';
                 document.getElementById('btnStop').style.display = 'none';
@@ -563,17 +554,15 @@
                     isRunning = false;
                 }
                 
-                // Обновляем статус этапов в таблице
+                // Обновляем статус этапов
                 if (data.stageStatus) {
                     const rows = document.querySelectorAll('#stageBody tr');
                     rows.forEach((row, i) => {
-                        const dot = row.querySelector('.status-dot') || document.createElement('span');
-                        if (!row.querySelector('.status-dot')) {
-                            dot.className = 'status-dot';
-                            row.querySelector('td:first-child').appendChild(dot);
+                        const dot = row.querySelector('.status-dot');
+                        if (dot) {
+                            const status = data.stageStatus[i] || 'waiting';
+                            dot.className = 'status-dot ' + status;
                         }
-                        const status = data.stageStatus[i] || 'waiting';
-                        dot.className = 'status-dot ' + status;
                     });
                 }
                 
@@ -585,7 +574,6 @@
                         if (line.includes('❌') || line.includes('ОШИБКА') || line.includes('АВАРИЙНАЯ')) type = 'error';
                         else if (line.includes('✅')) type = 'success';
                         else if (line.includes('⚠️')) type = 'warn';
-                        // Добавляем только новые сообщения
                         if (!logLines.some(e => e.msg === line)) {
                             addLog(line, type);
                         }
@@ -597,35 +585,23 @@
                 
             } catch (e) {
                 setConnStatus(false, '❌ ' + e.message);
-                // Демо-данные, если ESP недоступна
+                // Демо-данные
                 if (!document.getElementById('sCam').textContent.includes('°')) {
-                    const demo = getDemoStatus();
-                    document.getElementById('sStatus').textContent = demo.status;
-                    document.getElementById('sStage').textContent = demo.stage;
-                    document.getElementById('sCam').textContent = demo.cam + '°C';
-                    document.getElementById('sBat').textContent = demo.bat + '°C';
-                    document.getElementById('sSmk').textContent = demo.smk + '°C';
+                    const now = Date.now() / 1000;
+                    const wave = Math.sin(now / 30) * 3;
+                    document.getElementById('sStatus').textContent = isRunning ? 'Работает' : 'Ожидание';
+                    document.getElementById('sStage').textContent = isRunning ? 'Дымление' : '--';
+                    document.getElementById('sCam').textContent = (70 + wave).toFixed(1) + '°C';
+                    document.getElementById('sBat').textContent = (55 + wave * 0.5).toFixed(1) + '°C';
+                    document.getElementById('sSmk').textContent = (45 + wave * 0.3).toFixed(1) + '°C';
                 }
             }
-        }
-
-        function getDemoStatus() {
-            const now = Date.now() / 1000;
-            const wave = Math.sin(now / 30) * 3;
-            return {
-                status: isRunning ? 'Работает' : 'Ожидание',
-                stage: isRunning ? 'Дымление' : '--',
-                cam: (70 + wave).toFixed(1),
-                bat: (55 + wave * 0.5).toFixed(1),
-                smk: (45 + wave * 0.3).toFixed(1)
-            };
         }
 
         // ==================== ЗАПУСК ====================
         document.addEventListener('DOMContentLoaded', () => {
             loadRecipesFromESP();
             statusInterval = setInterval(updateStatus, 1500);
-            // Демо-обновление, если ESP недоступна
             setTimeout(() => {
                 if (!document.getElementById('sCam').textContent.includes('°')) {
                     addLog('⚠️ Работа в демо-режиме (ESP не найдена)', 'warn');
@@ -633,7 +609,5 @@
             }, 5000);
         });
     </script>
-</body>
-</html>
 </body>
 </html>
