@@ -1,0 +1,28 @@
+{
+  "recipes": [
+    {
+      "name": "Грудинка томленая",
+      "maxCameraTemp": 74,
+      "deltaCelsius": 18,
+      "stages": [
+        {
+          "active": true,
+          "name": "Подсушка",
+          "targetCameraTemp": 18,
+          "targetBatonTemp": 45,
+          "durationHours": 0,
+          "smokeOn": false,
+          "waterOn": false,
+          "maxDelta": 18,
+          "coolMode": 0,
+          "coolTargetTemp": 0,
+          "coolTimeoutMin": 0,
+          "requireHold": false,
+          "holdMinutes": 0
+        },
+        {
+          "active": true,
+          "name": "Дымление",
+          "targetCameraTemp": 45,
+          "targetBatonTemp": 0,
+         
