@@ -1,283 +1,639 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Коптильня: промышленный интерфейс</title>
-  <style>
-    :root {
-      --bg: #111318;
-      --panel: #1a1d24;
-      --border: #2a2e38;
-      --accent: #00a8cc;       /* промышленный голубой */
-      --danger: #ff5252;
-      --success: #4ade80;
-      --text: #e2e8f0;
-      --label: #94a3b8;
-    }
-    body {
-      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      margin: 0;
-      padding: 16px;
-    }
-    h1 { margin: 0 0 4px 0; font-size: 1.4rem; color: #fff; }
-    .subtitle { font-size: 0.85rem; color: var(--label); margin-bottom: 20px; }
-
-    .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 960px; margin: 0 auto; }
-    @media (max-width: 600px) { .dashboard { grid-template-columns: 1fr; } }
-
-    .card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-
-    .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin-bottom: 6px; }
-    .temp-value { font-weight: 700; font-size: 2.2rem; color: #fff; line-height: 1; }
-    
-    .progress-container { margin-top: 10px; height: 8px; background: #2a2e38; border-radius: 4px; overflow: hidden; }
-    .progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
-
-    .status-box {
-      margin-top: 12px;
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-weight: 600;
-      display: inline-block;
-      text-transform: uppercase;
-    }
-    .status-running { background: rgba(0, 168, 204, 0.15); color: var(--accent); border: 1px solid rgba(0,168,204,0.3); }
-    .status-idle { background: rgba(42, 46, 56, 0.6); color: var(--label); border: 1px solid var(--border); }
-
-    .controls-grid { display: grid; gap: 10px; }
-    button {
-      padding: 14px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 1rem;
-      transition: transform 0.05s, box-shadow 0.2s;
-    }
-    button:active { transform: scale(0.98); }
-    .btn-primary { background: var(--accent); color: #000; }
-    .btn-danger { background: var(--danger); color: #fff; }
-    .btn-recipe { background: #333; color: var(--text); }
-
-    #recipe-list { max-height: 220px; overflow-y: auto; }
-    .recipe-item {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 6px 8px; border-bottom: 1px solid #2a2e38;
-    }
-    .recipe-name { font-weight: 500; }
-    .recipe-active { color: var(--success); }
-
-    #log {
-      max-height: 180px;
-      overflow-y: auto;
-      font-family: monospace;
-      font-size: 0.8rem;
-      color: #64748b;
-      margin-top: 10px;
-      border-top: 1px solid var(--border);
-      padding-top: 8px;
-    }
-    .log-entry.error { color: var(--danger); }
-    .log-entry.info { color: var(--success); }
-
-    #lastUpdate { margin-top: 16px; font-size: 0.75rem; color: var(--label); }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Умная коптильня — удалённое управление</title>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+            background: #0b0d10;
+            color: #e2e8f0;
+            margin: 0;
+            padding: 12px;
+            min-height: 100vh;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        /* ===== ШАПКА ===== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            background: #1a1d24;
+            border-radius: 10px;
+            border: 1px solid #2a2e38;
+        }
+        .header h1 { margin: 0; font-size: 1.3rem; color: #fff; }
+        .header h1 span { color: #00a8cc; }
+        .connection-status {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .connection-status.online { background: rgba(74, 222, 128, 0.15); color: #4ade80; border: 1px solid rgba(74,222,128,0.3); }
+        .connection-status.offline { background: rgba(255, 82, 82, 0.15); color: #ff5252; border: 1px solid rgba(255,82,82,0.3); }
+        
+        /* ===== СЕТКА СТАТУСА ===== */
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .status-item {
+            background: #1a1d24;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border-left: 3px solid #2a2e38;
+            border: 1px solid #2a2e38;
+        }
+        .status-item .label { font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.5px; }
+        .status-item .value { font-size: 1.5rem; font-weight: 700; color: #fff; line-height: 1.2; }
+        .status-item .value.small { font-size: 1.1rem; }
+        .status-item.heater-on { border-left-color: #ff6b6b; }
+        .status-item.heater-off { border-left-color: #4a4e58; }
+        
+        /* ===== КАРТОЧКИ ===== */
+        .card {
+            background: #1a1d24;
+            border: 1px solid #2a2e38;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .card-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #00a8cc;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        /* ===== ПРОГРЕСС-БАРЫ ===== */
+        .progress-wrap { margin-top: 6px; height: 4px; background: #2a2e38; border-radius: 2px; overflow: hidden; }
+        .progress-wrap .fill { height: 100%; background: #00a8cc; width: 0%; transition: width 0.5s; }
+        .progress-wrap .fill.danger { background: #ff5252; }
+        
+        /* ===== КНОПКИ ===== */
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
+            min-height: 44px;
+            min-width: 44px;
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-primary { background: #00a8cc; color: #000; }
+        .btn-primary:hover { background: #00bcd4; }
+        .btn-danger { background: #ff5252; color: #fff; }
+        .btn-danger:hover { background: #ff6b6b; }
+        .btn-success { background: #4ade80; color: #000; }
+        .btn-success:hover { background: #5eea90; }
+        .btn-outline { background: transparent; color: #e2e8f0; border: 1px solid #4a4e58; }
+        .btn-outline:hover { background: #2a2e38; }
+        .btn-sm { padding: 6px 12px; font-size: 0.75rem; min-height: 32px; min-width: 32px; }
+        .btn-block { width: 100%; }
+        
+        /* ===== РЕЦЕПТЫ ===== */
+        .recipe-list { max-height: 240px; overflow-y: auto; }
+        .recipe-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            border-bottom: 1px solid #2a2e38;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.15s;
+        }
+        .recipe-item:hover { background: #252a33; }
+        .recipe-item.active { background: rgba(0, 168, 204, 0.12); border-left: 3px solid #00a8cc; }
+        .recipe-item .name { font-weight: 500; }
+        .recipe-item .temps { font-size: 0.8rem; color: #94a3b8; }
+        
+        /* ===== ТАБЛИЦА ЭТАПОВ ===== */
+        .table-wrap { overflow-x: auto; margin: 8px -8px 0; padding: 0 8px; }
+        .stage-table {
+            min-width: 700px;
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        .stage-table th {
+            background: #0b0d10;
+            color: #94a3b8;
+            padding: 6px 4px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .stage-table td {
+            border: 1px solid #2a2e38;
+            padding: 4px 4px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .stage-table input, .stage-table select {
+            background: #0b0d10;
+            color: #e2e8f0;
+            border: 1px solid #2a2e38;
+            border-radius: 3px;
+            padding: 4px 4px;
+            font-size: 0.75rem;
+            width: 100%;
+            max-width: 70px;
+        }
+        .stage-table input[type="text"] { max-width: 90px; }
+        .stage-table input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: #00a8cc; }
+        .stage-table select { max-width: 80px; }
+        .stage-table .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        .stage-table .status-dot.active { background: #4ade80; }
+        .stage-table .status-dot.done { background: #00a8cc; }
+        .stage-table .status-dot.error { background: #ff5252; }
+        .stage-table .status-dot.waiting { background: #4a4e58; }
+        
+        /* ===== ЛОГ ===== */
+        .log-panel {
+            background: #0b0d10;
+            border-radius: 6px;
+            padding: 10px;
+            max-height: 160px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: 8px;
+        }
+        .log-panel .entry { padding: 2px 0; border-bottom: 1px solid #1a1d24; }
+        .log-panel .entry.error { color: #ff5252; }
+        .log-panel .entry.success { color: #4ade80; }
+        .log-panel .entry.warn { color: #ffd93d; }
+        
+        /* ===== АДАПТИВ ===== */
+        @media (max-width: 600px) {
+            .status-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+            .status-item .value { font-size: 1.1rem; }
+            .status-item { padding: 8px 10px; }
+            .header h1 { font-size: 1.0rem; }
+            .btn { padding: 8px 14px; font-size: 0.8rem; min-height: 38px; }
+            .stage-table { font-size: 0.65rem; min-width: 560px; }
+            .stage-table input, .stage-table select { font-size: 0.6rem; max-width: 50px; padding: 2px; }
+            .stage-table input[type="text"] { max-width: 60px; }
+        }
+        @media (max-width: 400px) {
+            .status-grid { grid-template-columns: repeat(2, 1fr); }
+            .header { flex-direction: column; align-items: stretch; }
+        }
+    </style>
 </head>
 <body>
-  <h1>🥓 Коптильня: панель оператора</h1>
-  <p class="subtitle">Промышленный интерфейс, рецепты, мониторинг 10 км</p>
+    <div class="container">
+        <!-- ШАПКА -->
+        <div class="header">
+            <h1>🔥 Умная <span>коптильня</span></h1>
+            <div id="connStatus" class="connection-status offline">⏳ Подключение...</div>
+        </div>
 
-  <div class="dashboard">
-    <div class="card">
-      <span class="label">Температура камеры</span>
-      <div class="temp-value" id="tempCam">--</div>
-      <div class="progress-container"><div class="progress-bar" id="barCam"></div></div>
+        <!-- СТАТУС -->
+        <div class="status-grid" id="statusGrid">
+            <div class="status-item"><div class="label">Статус</div><div class="value" id="sStatus">--</div></div>
+            <div class="status-item"><div class="label">Этап</div><div class="value small" id="sStage">--</div></div>
+            <div class="status-item"><div class="label">Камера</div><div class="value" id="sCam">--°C</div></div>
+            <div class="status-item"><div class="label">Батон</div><div class="value" id="sBat">--°C</div></div>
+            <div class="status-item"><div class="label">Дым</div><div class="value" id="sSmk">--°C</div></div>
+            <div class="status-item" id="heaterStatus"><div class="label">ТЭН</div><div class="value small" id="sHeater">⏸ Выкл</div></div>
+        </div>
+
+        <!-- УПРАВЛЕНИЕ -->
+        <div class="card">
+            <div class="card-title">🎮 Управление</div>
+            <div class="btn-group">
+                <button class="btn btn-success" id="btnRun" onclick="runRecipe()">▶ Запустить</button>
+                <button class="btn btn-danger" id="btnStop" onclick="stopRecipe()" style="display:none;">⏹ Стоп</button>
+                <button class="btn btn-primary" onclick="saveRecipe()">💾 Сохранить</button>
+                <button class="btn btn-outline btn-sm" onclick="loadRecipesFromESP()">🔄 Обновить рецепты</button>
+            </div>
+        </div>
+
+        <!-- РЕЦЕПТЫ -->
+        <div class="card">
+            <div class="card-title">📋 Рецепты</div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+                <select id="recipeSelect" style="flex:1; min-width:120px; padding:8px; background:#0b0d10; color:#e2e8f0; border:1px solid #2a2e38; border-radius:4px;"></select>
+                <input type="text" id="recipeName" placeholder="Название" style="flex:1; min-width:100px; padding:8px; background:#0b0d10; color:#e2e8f0; border:1px solid #2a2e38; border-radius:4px;">
+                <input type="number" id="maxTemp" placeholder="Max °C" style="width:80px; padding:8px; background:#0b0d10; color:#e2e8f0; border:1px solid #2a2e38; border-radius:4px;">
+                <input type="number" id="deltaVal" placeholder="Δ" style="width:70px; padding:8px; background:#0b0d10; color:#e2e8f0; border:1px solid #2a2e38; border-radius:4px;">
+            </div>
+            <div class="table-wrap">
+                <table class="stage-table" id="stageTable">
+                    <thead><tr>
+                        <th>#</th><th>Название</th><th>Актив</th><th>Tкам</th><th>Tбат</th>
+                        <th>Время(ч)</th><th>Дым</th><th>Вода</th><th>Охл</th><th>Tохл</th><th>Тайм</th><th>Удерж</th><th>Мин</th>
+                    </tr></thead>
+                    <tbody id="stageBody"></tbody>
+                </table>
+            </div>
+            <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="btn btn-outline btn-sm" onclick="addStage()">➕ Добавить этап</button>
+                <button class="btn btn-outline btn-sm" onclick="removeLastStage()">✕ Удалить последний</button>
+                <span style="color:#94a3b8; font-size:0.75rem; align-self:center;">(всего 5 этапов)</span>
+            </div>
+        </div>
+
+        <!-- ЛОГ -->
+        <div class="card">
+            <div class="card-title">📜 Журнал</div>
+            <div class="log-panel" id="logPanel"><div id="logContent"></div></div>
+            <div style="font-size:0.65rem; color:#4a4e58; margin-top:6px;" id="lastUpdate">Ожидание данных...</div>
+        </div>
     </div>
-
-    <div class="card">
-      <span class="label">Температура продукта</span>
-      <div class="temp-value" id="tempBat">--</div>
-      <div class="progress-container"><div class="progress-bar" id="barBat"></div></div>
-    </div>
-  </div>
-
-  <div class="card" style="margin-top:16px;">
-    <span class="label">Статус системы</span>
-    <div id="statusBox" class="status-box status-idle">ОЖИДАНИЕ</div>
-    <p id="stageInfo" style="font-size:0.85rem; margin:8px 0 12px 0; color:#94a3b8;">Этап: —</p>
-  </div>
-
-  <div class="card" style="margin-top:16px;">
-    <span class="label">Управление и рецепты</span>
-    <div class="controls-grid">
-      <button class="btn-primary" onclick="sendCommand('START')">СТАРТ</button>
-      <button class="btn-danger" onclick="sendCommand('STOP')">СТОП</button>
-    </div>
-
-    <p style="margin:10px 0 6px 0; font-weight:600;">Рецепты</p>
-    <div id="recipe-list">
-      <!-- сюда JS добавит рецепты -->
-    </div>
-
-    <p style="margin:12px 0 4px 0; font-weight:600;">Добавить рецепт</p>
-    <input type="text" id="newRecipeName" placeholder="Название рецепта" style="width:100%; padding:8px; margin-bottom:6px; background:#2a2e38; color:#fff; border:1px solid #333; border-radius:4px;">
-    <input type="number" id="targetCam" placeholder="Цель камеры (°C)" style="width:100%; padding:8px; margin-bottom:6px; background:#2a2e38; color:#fff; border:1px solid #333; border-radius:4px;">
-    <input type="number" id="targetBat" placeholder="Цель продукта (°C)" style="width:100%; padding:8px; margin-bottom:8px; background:#2a2e38; color:#fff; border:1px solid #333; border-radius:4px;">
-    <button class="btn-recipe" onclick="addRecipe()">Добавить</button>
-  </div>
-
-  <div class="card" style="margin-top:16px;">
-    <span class="label">Журнал событий</span>
-    <div id="log"></div>
-  </div>
-
-  <p id="lastUpdate">Ожидание данных…</p>
 
     <script>
-    // --- НАСТРОЙКИ ДЛЯ ТЕСТА (можно менять) ---
-    const SIMULATED_TARGET_CAM = 75; // Цель камеры по умолчанию
-    const SIMULATED_TARGET_BAT = 55; // Цель продукта по умолчанию
+        // ==================== КОНФИГ ====================
+        // 🔥 ЗДЕСЬ УКАЖИТЕ РЕАЛЬНЫЙ IP ВАШЕЙ КОПТИЛЬНИ 🔥
+        const ESP_IP = '192.168.1.100';
+        const API_BASE = `http://${ESP_IP}`;
 
-    // --- ИМИТАЦИЯ ДАННЫХ (вместо fetch с сервера) ---
-    function getSimulatedData() {
-      // Генерируем "реальные" колебания температуры
-      const noiseCam = (Math.random() - 0.5) * 4; // шум +/- 2 градуса
-      const noiseBat = (Math.random() - 0.5) * 3; // шум +/- 1.5 градуса
-      
-      // Имитируем нагрев: температура медленно растет к цели
-      // В реальном проекте эти значения придут от ESP32
-      const currentCam = Math.min(SIMULATED_TARGET_CAM + noiseCam, SIMULATED_TARGET_CAM + 5);
-      const currentBat = Math.min(SIMULATED_TARGET_BAT + noiseBat, SIMULATED_TARGET_BAT + 10);
+        let recipes = [];
+        let currentRecipeIndex = 0;
+        let isRunning = false;
+        let statusInterval = null;
+        let logLines = [];
 
-      return {
-        temp_cam: parseFloat(currentCam.toFixed(1)),
-        temp_bat: parseFloat(currentBat.toFixed(1)),
-        status: 'running', // Статус "работает"
-        stage_name: 'Копчение (нагрев)',
-        target_cam: SIMULATED_TARGET_CAM,
-        target_bat: SIMULATED_TARGET_BAT
-      };
-    }
+        // ==================== ВСПОМОГАТЕЛЬНЫЕ ====================
+        function setConnStatus(online, msg) {
+            const el = document.getElementById('connStatus');
+            el.textContent = msg || (online ? '✅ Онлайн' : '❌ Офлайн');
+            el.className = 'connection-status ' + (online ? 'online' : 'offline');
+        }
 
-    // --- ЛОГИРОВАНИЕ (Журнал событий) ---
-    function log(msg, type = 'info') {
-      const d = new Date().toLocaleTimeString();
-      const div = document.createElement('div');
-      div.className = 'log-entry ' + type;
-      div.innerText = `[${d}] ${msg}`;
-      const log = document.getElementById('log');
-      log.prepend(div);
-      if (log.children.length > 20) log.lastElementChild.remove();
-    }
+        function addLog(msg, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            logLines.unshift({ time, msg, type });
+            if (logLines.length > 50) logLines.pop();
+            renderLog();
+        }
 
-    // --- ОБНОВЛЕНИЕ ИНТЕРФЕЙСА ---
-    function updateUI(data) {
-      document.getElementById('tempCam').innerText = data.temp_cam;
-      document.getElementById('tempBat').innerText = data.temp_bat;
+        function renderLog() {
+            const container = document.getElementById('logContent');
+            container.innerHTML = logLines.map(e =>
+                `<div class="entry ${e.type}">[${e.time}] ${e.msg}</div>`
+            ).join('');
+        }
 
-      // Расчет прогресс-баров относительно цели
-      const pctCam = Math.min(100, Math.max(0, (data.temp_cam / data.target_cam) * 100));
-      const pctBat = Math.min(100, Math.max(0, (data.temp_bat / data.target_bat) * 100));
+        async function fetchAPI(url, options = {}) {
+            try {
+                const response = await fetch(`${API_BASE}${url}`, {
+                    ...options,
+                    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return await response.json();
+            } catch (e) {
+                setConnStatus(false, '❌ ' + e.message);
+                throw e;
+            }
+        }
 
-      document.getElementById('barCam').style.width = pctCam + '%';
-      document.getElementById('barBat').style.width = pctBat + '%';
+        // ==================== РЕЦЕПТЫ ====================
+        async function loadRecipesFromESP() {
+            try {
+                const data = await fetchAPI('/api/recipes');
+                recipes = data.recipes || [];
+                fillRecipeSelect();
+                if (recipes.length) loadRecipe(0);
+                setConnStatus(true, '✅ Онлайн');
+                addLog('Рецепты загружены (' + recipes.length + ' шт.)', 'success');
+            } catch (e) {
+                addLog('Ошибка загрузки рецептов: ' + e.message, 'error');
+                // Демо-режим, если ESP недоступна
+                if (!recipes.length) {
+                    recipes = generateDemoRecipes();
+                    fillRecipeSelect();
+                    loadRecipe(0);
+                }
+            }
+        }
 
-      const statusBox = document.getElementById('statusBox');
-      if (data.status === 'running') {
-        statusBox.innerText = 'СТАТУС: РАБОТАЕТ';
-        statusBox.className = 'status-box status-running';
-      } else {
-        statusBox.innerText = 'СТАТУС: ОЖИДАНИЕ';
-        statusBox.className = 'status-box status-idle';
-      }
+        function generateDemoRecipes() {
+            return [{
+                name: 'Грудинка томленая',
+                maxCameraTemp: 74,
+                deltaCelsius: 18,
+                stages: [
+                    { active: true, name: 'Подсушка', targetCameraTemp: 18, targetBatonTemp: 45, durationHours: 0, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 },
+                    { active: true, name: 'Дымление', targetCameraTemp: 45, targetBatonTemp: 0, durationHours: 1, smokeOn: true, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 },
+                    { active: true, name: 'Ферментация', targetCameraTemp: 50, targetBatonTemp: 50, durationHours: 0.5, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 },
+                    { active: true, name: 'Томление', targetCameraTemp: 73, targetBatonTemp: 73, durationHours: 6, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 },
+                    { active: true, name: 'Охлаждение', targetCameraTemp: 15, targetBatonTemp: 15, durationHours: 0, smokeOn: false, waterOn: true, coolMode: 1, coolTargetTemp: 15, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 }
+                ]
+            }];
+        }
 
-      document.getElementById('stageInfo').innerText = 'Этап: ' + (data.stage_name || '—');
-      document.getElementById('lastUpdate').innerText = 'Обновлено: ' + new Date().toLocaleTimeString();
-      
-      log('Данные обновлены локально (симуляция)', 'info');
-    }
+        function fillRecipeSelect() {
+            const sel = document.getElementById('recipeSelect');
+            sel.innerHTML = '';
+            recipes.forEach((r, i) => {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = (i+1) + '. ' + (r.name || 'Рецепт '+(i+1));
+                sel.appendChild(opt);
+            });
+            sel.onchange = () => loadRecipe(parseInt(sel.value));
+        }
 
-    // --- ЭМУЛЯЦИЯ РАБОТЫ СИСТЕМЫ ---
-    function startSimulationLoop() {
-      const data = getSimulatedData();
-      updateUI(data);
-      
-      // Меняем данные каждые 2 секунды для наглядности
-      setTimeout(startSimulationLoop, 2000);
-    }
+        function loadRecipe(index) {
+            currentRecipeIndex = index;
+            const r = recipes[index];
+            if (!r) return;
+            document.getElementById('recipeName').value = r.name || '';
+            document.getElementById('maxTemp').value = r.maxCameraTemp || 80;
+            document.getElementById('deltaVal').value = r.deltaCelsius || 18;
+            renderStages(r.stages || []);
+            document.getElementById('recipeSelect').value = index;
+        }
 
-    // --- ФУНКЦИИ УПРАВЛЕНИЯ (Кнопки) ---
-    function sendCommand(cmd) {
-      log('Команда отправлена: ' + cmd, 'info');
-      // Здесь в будущем будет реальный fetch() для ESP32
-      // Сейчас просто логируем, чтобы интерфейс не ломался
-    }
+        function renderStages(stages) {
+            const tbody = document.getElementById('stageBody');
+            tbody.innerHTML = '';
+            const maxStages = 5;
+            for (let i = 0; i < maxStages; i++) {
+                const s = stages[i] || { active: false, name: 'Этап '+(i+1), targetCameraTemp: 0, targetBatonTemp: 0, durationHours: 0, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 };
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${i+1}</td>
+                    <td><input type="text" class="stage-name" value="${s.name||''}" data-idx="${i}" style="max-width:80px;"></td>
+                    <td><input type="checkbox" class="stage-active" ${s.active?'checked':''} data-idx="${i}"></td>
+                    <td><input type="number" class="stage-cam" step="0.5" value="${s.targetCameraTemp||0}" data-idx="${i}" style="max-width:55px;"></td>
+                    <td><input type="number" class="stage-bat" step="0.5" value="${s.targetBatonTemp||0}" data-idx="${i}" style="max-width:55px;"></td>
+                    <td><input type="number" class="stage-dur" step="0.1" value="${s.durationHours||0}" data-idx="${i}" style="max-width:50px;"></td>
+                    <td><select class="stage-smoke" data-idx="${i}">
+                        <option value="1" ${s.smokeOn?'selected':''}>ДА</option>
+                        <option value="0" ${!s.smokeOn?'selected':''}>НЕТ</option>
+                    </select></td>
+                    <td><select class="stage-water" data-idx="${i}">
+                        <option value="1" ${s.waterOn?'selected':''}>ДА</option>
+                        <option value="0" ${!s.waterOn?'selected':''}>НЕТ</option>
+                    </select></td>
+                    <td><select class="stage-cool" data-idx="${i}">
+                        <option value="0" ${s.coolMode===0?'selected':''}>Нет</option>
+                        <option value="1" ${s.coolMode===1?'selected':''}>Непрер</option>
+                        <option value="2" ${s.coolMode===2?'selected':''}>Имп</option>
+                        <option value="3" ${s.coolMode===3?'selected':''}>Имп+Т</option>
+                    </select></td>
+                    <td><input type="number" class="stage-cooltarget" step="0.5" value="${s.coolTargetTemp||0}" data-idx="${i}" style="max-width:50px;"></td>
+                    <td><input type="number" class="stage-cooltimeout" value="${s.coolTimeoutMin||0}" data-idx="${i}" style="max-width:45px;"></td>
+                    <td><select class="stage-hold" data-idx="${i}">
+                        <option value="1" ${s.requireHold?'selected':''}>ДА</option>
+                        <option value="0" ${!s.requireHold?'selected':''}>НЕТ</option>
+                    </select></td>
+                    <td><input type="number" class="stage-holdmin" step="0.5" value="${s.holdMinutes||0}" data-idx="${i}" style="max-width:45px;"></td>
+                `;
+                tbody.appendChild(tr);
+            }
+        }
 
-    function selectRecipe(name) {
-      sendCommand('RECIPE_' + name);
-      log('Выбран рецепт: ' + name, 'info');
-    }
+        function getStagesFromUI() {
+            const stages = [];
+            const rows = document.querySelectorAll('#stageBody tr');
+            rows.forEach(row => {
+                const idx = parseInt(row.querySelector('.stage-name').dataset.idx);
+                stages[idx] = {
+                    active: row.querySelector('.stage-active').checked,
+                    name: row.querySelector('.stage-name').value || 'Этап '+(idx+1),
+                    targetCameraTemp: parseFloat(row.querySelector('.stage-cam').value) || 0,
+                    targetBatonTemp: parseFloat(row.querySelector('.stage-bat').value) || 0,
+                    durationHours: parseFloat(row.querySelector('.stage-dur').value) || 0,
+                    smokeOn: parseInt(row.querySelector('.stage-smoke').value) === 1,
+                    waterOn: parseInt(row.querySelector('.stage-water').value) === 1,
+                    maxDelta: 18,
+                    coolMode: parseInt(row.querySelector('.stage-cool').value),
+                    coolTargetTemp: parseFloat(row.querySelector('.stage-cooltarget').value) || 0,
+                    coolTimeoutMin: parseInt(row.querySelector('.stage-cooltimeout').value) || 0,
+                    requireHold: parseInt(row.querySelector('.stage-hold').value) === 1,
+                    holdMinutes: parseFloat(row.querySelector('.stage-holdmin').value) || 0
+                };
+            });
+            return stages;
+        }
 
-    function addRecipe() {
-      const name = document.getElementById('newRecipeName').value.trim();
-      const tCam = parseFloat(document.getElementById('targetCam').value);
-      const tBat = parseFloat(document.getElementById('targetBat').value);
-      
-      if (!name || isNaN(tCam) || isNaN(tBat)) {
-        log('Заполни все поля', 'error');
-        return;
-      }
+        function addStage() {
+            const stages = getStagesFromUI();
+            for (let i = 0; i < 5; i++) {
+                if (!stages[i] || !stages[i].active) {
+                    if (!stages[i]) stages[i] = { active: true, name: 'Новый этап '+(i+1), targetCameraTemp: 0, targetBatonTemp: 0, durationHours: 0, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 };
+                    else stages[i].active = true;
+                    renderStages(stages);
+                    addLog('Этап '+(i+1)+' добавлен', 'success');
+                    return;
+                }
+            }
+            addLog('Все 5 этапов уже активны!', 'error');
+        }
 
-      // В демо-режиме просто показываем успех, без записи на сервер
-      log('Рецепт "' + name + '" добавлен в локальную память', 'info');
-      
-      // Очищаем поля
-      document.getElementById('newRecipeName').value = '';
-      document.getElementById('targetCam').value = '';
-      document.getElementById('targetBat').value = '';
-      
-      // Перезагружаем список (в демо просто пишем в лог, что рецепт принят)
-      loadRecipesDemo();
-    }
+        function removeLastStage() {
+            const stages = getStagesFromUI();
+            let activeCount = stages.filter(s => s && s.active).length;
+            if (activeCount <= 1) { addLog('Должен быть хотя бы 1 активный этап!', 'error'); return; }
+            for (let i = 4; i >= 0; i--) {
+                if (stages[i] && stages[i].active) {
+                    stages[i].active = false;
+                    renderStages(stages);
+                    addLog('Этап '+(i+1)+' удалён', 'info');
+                    return;
+                }
+            }
+        }
 
-    // --- ДЕМО-СПИСОК РЕЦЕПТОВ (без файла recipes.txt) ---
-    const demoRecipes = [
-      { name: 'Горячее копчение', target_cam: 80, target_bat: 65, active: true },
-      { name: 'Холодное копчение', target_cam: 25, target_bat: 22, active: false },
-      { name: 'Запекание', target_cam: 120, target_bat: 85, active: false }
-    ];
+        // ==================== СОХРАНЕНИЕ ====================
+        async function saveRecipe() {
+            const data = {
+                index: currentRecipeIndex,
+                name: document.getElementById('recipeName').value || 'Рецепт '+(currentRecipeIndex+1),
+                maxCameraTemp: parseFloat(document.getElementById('maxTemp').value) || 80,
+                deltaCelsius: parseFloat(document.getElementById('deltaVal').value) || 18,
+                stages: getStagesFromUI()
+            };
 
-    function loadRecipesDemo() {
-      const list = document.getElementById('recipe-list');
-      list.innerHTML = '';
-      demoRecipes.forEach(r => {
-        const div = document.createElement('div');
-        div.className = 'recipe-item';
-        div.innerHTML = `<span class="recipe-name ${r.active ? 'recipe-active' : ''}">${r.name}</span><span style="color:#64748b">${r.target_cam}°C / ${r.target_bat}°C</span>`;
-        div.onclick = () => {
-          selectRecipe(r.name);
-          // Визуально подсвечиваем активный рецепт
-          demoRecipes.forEach(rec => rec.active = false);
-          r.active = true;
-          loadRecipesDemo();
-        };
-        list.appendChild(div);
-      });
-    }
+            try {
+                const result = await fetchAPI('/api/recipe', {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+                if (result.success) {
+                    addLog('✅ Рецепт сохранён: ' + data.name, 'success');
+                    await loadRecipesFromESP();
+                    loadRecipe(currentRecipeIndex);
+                }
+            } catch (e) {
+                addLog('❌ Ошибка сохранения: ' + e.message, 'error');
+                // Демо-сохранение локально
+                recipes[currentRecipeIndex] = data;
+                fillRecipeSelect();
+                addLog('💾 Рецепт сохранён локально (демо)', 'info');
+            }
+        }
 
-    // --- ЗАПУСК ---
-    document.addEventListener('DOMContentLoaded', () => {
-      loadRecipesDemo();
-      startSimulationLoop(); // Запускаем имитацию данных
-    });
-  </script>
+        // ==================== ЗАПУСК/СТОП ====================
+        async function runRecipe() {
+            const idx = parseInt(document.getElementById('recipeSelect').value);
+            try {
+                const result = await fetchAPI(`/api/run?index=${idx}`, { method: 'POST' });
+                if (result.success) {
+                    isRunning = true;
+                    document.getElementById('btnRun').style.display = 'none';
+                    document.getElementById('btnStop').style.display = 'inline-block';
+                    addLog('▶️ Запущен рецепт: ' + (recipes[idx]?.name || '#'+idx), 'success');
+                }
+            } catch (e) {
+                addLog('❌ Ошибка запуска: ' + e.message, 'error');
+                // Демо-режим
+                isRunning = true;
+                document.getElementById('btnRun').style.display = 'none';
+                document.getElementById('btnStop').style.display = 'inline-block';
+                addLog('▶️ Запуск (демо-режим)', 'info');
+            }
+        }
+
+        async function stopRecipe() {
+            try {
+                await fetchAPI('/api/stop', { method: 'POST' });
+                isRunning = false;
+                document.getElementById('btnRun').style.display = 'inline-block';
+                document.getElementById('btnStop').style.display = 'none';
+                addLog('⏹ Остановлено', 'warn');
+            } catch (e) {
+                addLog('❌ Ошибка остановки: ' + e.message, 'error');
+                // Демо-режим
+                isRunning = false;
+                document.getElementById('btnRun').style.display = 'inline-block';
+                document.getElementById('btnStop').style.display = 'none';
+                addLog('⏹ Остановлено (демо)', 'warn');
+            }
+        }
+
+        // ==================== ОБНОВЛЕНИЕ СТАТУСА ====================
+        async function updateStatus() {
+            try {
+                const data = await fetchAPI('/api/status');
+                
+                document.getElementById('sStatus').textContent = data.status || '--';
+                document.getElementById('sStage').textContent = data.stage || '--';
+                document.getElementById('sCam').textContent = (data.cam || 0).toFixed(1) + '°C';
+                document.getElementById('sBat').textContent = (data.bat || 0).toFixed(1) + '°C';
+                document.getElementById('sSmk').textContent = (data.smk || 0).toFixed(1) + '°C';
+                
+                const heaterEl = document.getElementById('sHeater');
+                const heaterStatus = document.getElementById('heaterStatus');
+                if (data.heater) {
+                    heaterEl.textContent = '🔥 Вкл';
+                    heaterStatus.className = 'status-item heater-on';
+                } else {
+                    heaterEl.textContent = '⏸ Выкл';
+                    heaterStatus.className = 'status-item heater-off';
+                }
+                
+                if (data.running) {
+                    document.getElementById('btnRun').style.display = 'none';
+                    document.getElementById('btnStop').style.display = 'inline-block';
+                    isRunning = true;
+                } else {
+                    document.getElementById('btnRun').style.display = 'inline-block';
+                    document.getElementById('btnStop').style.display = 'none';
+                    isRunning = false;
+                }
+                
+                // Обновляем статус этапов в таблице
+                if (data.stageStatus) {
+                    const rows = document.querySelectorAll('#stageBody tr');
+                    rows.forEach((row, i) => {
+                        const dot = row.querySelector('.status-dot') || document.createElement('span');
+                        if (!row.querySelector('.status-dot')) {
+                            dot.className = 'status-dot';
+                            row.querySelector('td:first-child').appendChild(dot);
+                        }
+                        const status = data.stageStatus[i] || 'waiting';
+                        dot.className = 'status-dot ' + status;
+                    });
+                }
+                
+                // Лог
+                if (data.log) {
+                    const lines = data.log.split('\n').filter(l => l.trim());
+                    lines.forEach(line => {
+                        let type = 'info';
+                        if (line.includes('❌') || line.includes('ОШИБКА') || line.includes('АВАРИЙНАЯ')) type = 'error';
+                        else if (line.includes('✅')) type = 'success';
+                        else if (line.includes('⚠️')) type = 'warn';
+                        // Добавляем только новые сообщения
+                        if (!logLines.some(e => e.msg === line)) {
+                            addLog(line, type);
+                        }
+                    });
+                }
+                
+                document.getElementById('lastUpdate').textContent = 'Обновлено: ' + new Date().toLocaleTimeString();
+                setConnStatus(true, '✅ Онлайн');
+                
+            } catch (e) {
+                setConnStatus(false, '❌ ' + e.message);
+                // Демо-данные, если ESP недоступна
+                if (!document.getElementById('sCam').textContent.includes('°')) {
+                    const demo = getDemoStatus();
+                    document.getElementById('sStatus').textContent = demo.status;
+                    document.getElementById('sStage').textContent = demo.stage;
+                    document.getElementById('sCam').textContent = demo.cam + '°C';
+                    document.getElementById('sBat').textContent = demo.bat + '°C';
+                    document.getElementById('sSmk').textContent = demo.smk + '°C';
+                }
+            }
+        }
+
+        function getDemoStatus() {
+            const now = Date.now() / 1000;
+            const wave = Math.sin(now / 30) * 3;
+            return {
+                status: isRunning ? 'Работает' : 'Ожидание',
+                stage: isRunning ? 'Дымление' : '--',
+                cam: (70 + wave).toFixed(1),
+                bat: (55 + wave * 0.5).toFixed(1),
+                smk: (45 + wave * 0.3).toFixed(1)
+            };
+        }
+
+        // ==================== ЗАПУСК ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            loadRecipesFromESP();
+            statusInterval = setInterval(updateStatus, 1500);
+            // Демо-обновление, если ESP недоступна
+            setTimeout(() => {
+                if (!document.getElementById('sCam').textContent.includes('°')) {
+                    addLog('⚠️ Работа в демо-режиме (ESP не найдена)', 'warn');
+                }
+            }, 5000);
+        });
+    </script>
+</body>
+</html>
 </body>
 </html>
