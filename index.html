@@ -16,7 +16,6 @@
         }
         .container { max-width: 1200px; margin: 0 auto; }
         
-        /* ===== ШАПКА ===== */
         .header {
             display: flex;
             justify-content: space-between;
@@ -67,7 +66,6 @@
         .ip-bar .current-ip.online { color: #4ade80; }
         .ip-bar .current-ip.offline { color: #ff5252; }
         
-        /* ===== СЕТКА СТАТУСА ===== */
         .status-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -80,26 +78,12 @@
             border-radius: 10px;
             border: 1px solid #2a2e38;
         }
-        .status-item .label {
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            color: #94a3b8;
-            letter-spacing: 0.5px;
-        }
-        .status-item .value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #fff;
-            line-height: 1.2;
-        }
+        .status-item .label { font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.5px; }
+        .status-item .value { font-size: 1.5rem; font-weight: 700; color: #fff; line-height: 1.2; }
         .status-item .value.small { font-size: 1.1rem; }
         .status-item.heater-on { border-left: 4px solid #ff6b6b; }
         .status-item.heater-off { border-left: 4px solid #4a4e58; }
-        .status-item .value.status-running { color: #4ade80; }
-        .status-item .value.status-error { color: #ff5252; }
-        .status-item .value.status-done { color: #00a8cc; }
         
-        /* ===== КАРТОЧКИ ===== */
         .card {
             background: #1a1d24;
             border: 1px solid #2a2e38;
@@ -116,7 +100,6 @@
             font-weight: 700;
         }
         
-        /* ===== КНОПКИ ===== */
         .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
         .btn {
             padding: 10px 22px;
@@ -142,7 +125,6 @@
         .btn-outline:hover { background: #2a2e38; }
         .btn-sm { padding: 6px 14px; font-size: 0.75rem; min-height: 32px; min-width: 32px; }
         
-        /* ===== РЕЦЕПТЫ ===== */
         .recipe-selector {
             display: flex;
             gap: 10px;
@@ -174,7 +156,6 @@
         .recipe-selector input[type="text"] { min-width: 120px; flex: 1; }
         .recipe-selector label { font-size: 0.8rem; color: #94a3b8; }
         
-        /* ===== ТАБЛИЦА ЭТАПОВ ===== */
         .table-wrap { overflow-x: auto; margin: 8px 0; }
         .stage-table {
             min-width: 700px;
@@ -225,11 +206,7 @@
         .stage-table .status-dot.done { background: #00a8cc; }
         .stage-table .status-dot.error { background: #ff5252; }
         .stage-table .status-dot.waiting { background: #4a4e58; }
-        .stage-table .stage-active-row { background: rgba(74, 222, 128, 0.08); }
-        .stage-table .stage-done-row { background: rgba(0, 168, 204, 0.08); }
-        .stage-table .stage-error-row { background: rgba(255, 82, 82, 0.08); }
         
-        /* ===== ДЫМОГЕНЕРАТОР ===== */
         .smoke-panel {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
@@ -254,7 +231,6 @@
         .smoke-item .state.error { color: #ff5252; }
         .smoke-item .state.waiting { color: #ffd93d; }
         
-        /* ===== СТАТУС БАР ЭТАПОВ ===== */
         .stage-status-bar {
             display: flex;
             gap: 6px;
@@ -281,7 +257,6 @@
         .stage-status-bar .label { font-size: 0.7rem; color: #94a3b8; font-weight: 600; margin-right: 6px; }
         .stage-status-bar .stage-label { font-size: 0.7rem; color: #94a3b8; }
         
-        /* ===== ЛОГ ===== */
         .log-panel {
             background: #0b0d10;
             border-radius: 8px;
@@ -300,7 +275,6 @@
         .log-panel .entry.success { color: #4ade80; }
         .log-panel .entry.warn { color: #ffd93d; }
         
-        /* ===== АДАПТИВ ===== */
         @media (max-width: 600px) {
             .status-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
             .status-item .value { font-size: 1.1rem; }
@@ -322,13 +296,12 @@
 </head>
 <body>
     <div class="container">
-        <!-- ===== ШАПКА ===== -->
         <div class="header">
             <h1>🔥 Умная <span>коптильня</span></h1>
             <div id="connStatus" class="connection-status offline">⏳ Подключение...</div>
         </div>
 
-        <!-- ===== ПАНЕЛЬ IP ===== -->
+        <!-- Панель IP -->
         <div class="ip-bar">
             <span style="font-size:0.8rem; color:#94a3b8;">🔗 IP:</span>
             <input type="text" id="ipInput" placeholder="192.168.137.57">
@@ -337,7 +310,7 @@
             <span class="current-ip" id="currentIP"></span>
         </div>
 
-        <!-- ===== СТАТУС ===== -->
+        <!-- Статус -->
         <div class="status-grid" id="statusGrid">
             <div class="status-item"><div class="label">Статус</div><div class="value" id="sStatus">--</div></div>
             <div class="status-item"><div class="label">Этап</div><div class="value small" id="sStage">--</div></div>
@@ -348,7 +321,7 @@
             <div class="status-item" id="heaterStatus"><div class="label">ТЭН</div><div class="value small" id="sHeater">⏸ Выкл</div></div>
         </div>
 
-        <!-- ===== ДЫМОГЕНЕРАТОР ===== -->
+        <!-- Дымогенератор -->
         <div class="card">
             <div class="card-title">💨 Дымогенератор</div>
             <div class="smoke-panel" id="smokePanel">
@@ -359,7 +332,7 @@
             </div>
         </div>
 
-        <!-- ===== УПРАВЛЕНИЕ ===== -->
+        <!-- Управление -->
         <div class="card">
             <div class="card-title">🎮 Управление</div>
             <div class="btn-group">
@@ -372,7 +345,7 @@
             </div>
         </div>
 
-        <!-- ===== РЕЦЕПТЫ ===== -->
+        <!-- Рецепты -->
         <div class="card">
             <div class="card-title">📋 Рецепты</div>
             <div class="recipe-selector">
@@ -386,12 +359,10 @@
                 <input type="number" id="deltaVal" step="0.5">
             </div>
 
-            <!-- Статус бар этапов -->
             <div class="stage-status-bar" id="stageStatusBar">
                 <span class="label">Статус этапов:</span>
             </div>
 
-            <!-- Таблица этапов -->
             <div class="table-wrap">
                 <table class="stage-table" id="stageTable">
                     <thead><tr>
@@ -409,7 +380,7 @@
             </div>
         </div>
 
-        <!-- ===== ЛОГ ===== -->
+        <!-- Лог -->
         <div class="card">
             <div class="card-title">📜 Журнал</div>
             <div class="log-panel" id="logPanel"><div id="logContent"></div></div>
@@ -430,7 +401,6 @@
         let audioCtx = null;
         let lastStatus = {};
 
-        // ==================== ВСПОМОГАТЕЛЬНЫЕ ====================
         function setConnStatus(online, msg) {
             const el = document.getElementById('connStatus');
             el.textContent = msg || (online ? '✅ Онлайн' : '❌ Офлайн');
@@ -666,8 +636,6 @@
             for (let i = 0; i < maxStages; i++) {
                 const s = stages[i] || { active: false, name: 'Этап '+(i+1), targetCameraTemp: 0, targetBatonTemp: 0, durationHours: 0, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 };
                 const tr = document.createElement('tr');
-                const statusClass = s.active ? 'stage-active-row' : '';
-                tr.className = statusClass;
                 tr.innerHTML = `
                     <td>${i+1}<span class="status-dot waiting"></span></td>
                     <td><input type="text" class="stage-name" value="${s.name||''}" data-idx="${i}" style="max-width:90px;"></td>
@@ -847,7 +815,6 @@
             saveRecipe();
         }
 
-        // ==================== СОХРАНЕНИЕ ====================
         async function saveRecipe() {
             const data = {
                 index: currentRecipeIndex,
@@ -870,7 +837,6 @@
                 }
             } catch (e) {
                 addLog('❌ Ошибка сохранения: ' + e.message, 'error');
-                // Сохраняем локально
                 recipes[currentRecipeIndex] = data;
                 fillRecipeSelect();
                 loadRecipe(currentRecipeIndex);
@@ -878,7 +844,6 @@
             }
         }
 
-        // ==================== ЗАПУСК/СТОП ====================
         async function runRecipe() {
             const idx = parseInt(document.getElementById('recipeSelect').value);
             try {
@@ -892,7 +857,6 @@
                 }
             } catch (e) {
                 addLog('❌ Ошибка запуска: ' + e.message, 'error');
-                // Демо-режим
                 isRunning = true;
                 document.getElementById('btnRun').style.display = 'none';
                 document.getElementById('btnStop').style.display = 'inline-block';
@@ -919,25 +883,16 @@
             }
         }
 
-        // ==================== ОБНОВЛЕНИЕ СТАТУСА ====================
         async function updateStatus() {
             try {
                 const data = await fetchAPI('/api/status');
 
-                // Статус
-                const statusEl = document.getElementById('sStatus');
-                statusEl.textContent = data.status || '--';
-                statusEl.className = 'value';
-                if (data.status === 'Работает') statusEl.classList.add('status-running');
-                else if (data.status === 'Ошибка') statusEl.classList.add('status-error');
-                else if (data.status === 'Завершён') statusEl.classList.add('status-done');
-
+                document.getElementById('sStatus').textContent = data.status || '--';
                 document.getElementById('sStage').textContent = data.stage || '--';
                 document.getElementById('sCam').textContent = (data.cam || 0).toFixed(1) + '°C';
                 document.getElementById('sBat').textContent = (data.bat || 0).toFixed(1) + '°C';
                 document.getElementById('sSmk').textContent = (data.smk || 0).toFixed(1) + '°C';
 
-                // Осталось времени
                 if (data.timeLeft && data.timeLeft > 0) {
                     const h = Math.floor(data.timeLeft / 3600);
                     const m = Math.floor((data.timeLeft % 3600) / 60);
@@ -946,7 +901,6 @@
                     document.getElementById('sTimeLeft').textContent = '--';
                 }
 
-                // ТЭН
                 const heaterEl = document.getElementById('sHeater');
                 const heaterStatus = document.getElementById('heaterStatus');
                 if (data.heater) {
@@ -957,7 +911,6 @@
                     heaterStatus.className = 'status-item heater-off';
                 }
 
-                // Кнопки
                 if (data.running) {
                     document.getElementById('btnRun').style.display = 'none';
                     document.getElementById('btnStop').style.display = 'inline-block';
@@ -968,7 +921,6 @@
                     isRunning = false;
                 }
 
-                // Дымогенератор
                 if (data.smoke) {
                     const solenoid = document.getElementById('smokeSolenoid');
                     solenoid.textContent = data.smoke.solenoid ? '🔓 Открыта' : '🔒 Закрыта';
@@ -991,7 +943,6 @@
                     state.className = 'state ' + cls;
                 }
 
-                // Статус этапов в таблице
                 if (data.stageStatus) {
                     const rows = document.querySelectorAll('#stageBody tr');
                     rows.forEach((row, i) => {
@@ -1003,7 +954,6 @@
                         const cls = data.stageStatus[i] || 'waiting';
                         row.className = 'stage-' + cls + '-row';
                     });
-                    // Обновляем статус бар
                     const bar = document.getElementById('stageStatusBar');
                     let html = '<span class="label">Статус этапов:</span>';
                     data.stageStatus.forEach((status, i) => {
@@ -1013,7 +963,6 @@
                     bar.innerHTML = html;
                 }
 
-                // Лог
                 if (data.log) {
                     const lines = data.log.split('\n').filter(l => l.trim());
                     lines.forEach(line => {
@@ -1030,7 +979,6 @@
                 document.getElementById('lastUpdate').textContent = 'Обновлено: ' + new Date().toLocaleTimeString();
                 setConnStatus(true, '✅ Онлайн');
 
-                // Звуки
                 if (data.hasError && !lastStatus._errorPlayed) {
                     lastStatus._errorPlayed = true;
                     playEmergencyStop();
@@ -1048,7 +996,6 @@
 
             } catch (e) {
                 setConnStatus(false, '❌ ' + e.message);
-                // Демо-данные если ESP недоступна
                 if (!document.getElementById('sCam').textContent.includes('°')) {
                     const now = Date.now() / 1000;
                     const wave = Math.sin(now / 30) * 3;
@@ -1065,7 +1012,6 @@
             }
         }
 
-        // ==================== ЗАПУСК ====================
         document.addEventListener('DOMContentLoaded', () => {
             const savedIP = localStorage.getItem('esp_ip');
             if (savedIP) {
@@ -1078,7 +1024,6 @@
             } else {
                 autoFindESP();
             }
-            // Восстанавливаем состояние звука
             const soundState = localStorage.getItem('sound_enabled');
             if (soundState !== null) {
                 soundEnabled = soundState === 'true';
