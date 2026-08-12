@@ -8,14 +8,15 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
             font-family: 'Segoe UI', Roboto, Arial, sans-serif;
-            background: #0b0d10;
-            color: #e2e8f0;
+            background: #eef2f7;
+            color: #1a1a2e;
             margin: 0;
             padding: 12px;
             min-height: 100vh;
         }
         .container { max-width: 1200px; margin: 0 auto; }
         
+        /* ===== ШАПКА ===== */
         .header {
             display: flex;
             justify-content: space-between;
@@ -24,20 +25,21 @@
             gap: 10px;
             margin-bottom: 16px;
             padding: 12px 20px;
-            background: #1a1d24;
+            background: #ffffff;
             border-radius: 12px;
-            border: 1px solid #2a2e38;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid #dce1e8;
         }
-        .header h1 { margin: 0; font-size: 1.4rem; color: #fff; }
-        .header h1 span { color: #00a8cc; }
+        .header h1 { margin: 0; font-size: 1.4rem; color: #1a1a2e; }
+        .header h1 span { color: #e67e22; }
         .connection-status {
             padding: 6px 16px;
             border-radius: 20px;
             font-size: 0.8rem;
             font-weight: 600;
         }
-        .connection-status.online { background: rgba(74, 222, 128, 0.15); color: #4ade80; border: 1px solid rgba(74,222,128,0.3); }
-        .connection-status.offline { background: rgba(255, 82, 82, 0.15); color: #ff5252; border: 1px solid rgba(255,82,82,0.3); }
+        .connection-status.online { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .connection-status.offline { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         
         /* ===== ПАНЕЛЬ IP ===== */
         .ip-bar {
@@ -47,25 +49,27 @@
             flex-wrap: wrap;
             margin-bottom: 12px;
             padding: 10px 16px;
-            background: #1a1d24;
+            background: #ffffff;
             border-radius: 10px;
-            border: 1px solid #2a2e38;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            border: 1px solid #dce1e8;
         }
         .ip-bar input {
             flex: 1;
             min-width: 150px;
             padding: 8px 12px;
-            background: #0b0d10;
-            color: #e2e8f0;
-            border: 1px solid #2a2e38;
+            background: #ffffff;
+            color: #1a1a2e;
+            border: 1px solid #dce1e8;
             border-radius: 6px;
             font-size: 0.9rem;
         }
-        .ip-bar input:focus { outline: none; border-color: #00a8cc; }
-        .ip-bar .current-ip { font-size: 0.8rem; color: #94a3b8; }
-        .ip-bar .current-ip.online { color: #4ade80; }
-        .ip-bar .current-ip.offline { color: #ff5252; }
+        .ip-bar input:focus { outline: none; border-color: #e67e22; }
+        .ip-bar .current-ip { font-size: 0.8rem; color: #888; }
+        .ip-bar .current-ip.online { color: #27ae60; }
+        .ip-bar .current-ip.offline { color: #e74c3c; }
         
+        /* ===== СЕТКА СТАТУСА ===== */
         .status-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -73,33 +77,40 @@
             margin-bottom: 16px;
         }
         .status-item {
-            background: #1a1d24;
+            background: #ffffff;
             padding: 12px 16px;
             border-radius: 10px;
-            border: 1px solid #2a2e38;
+            border: 1px solid #dce1e8;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
         }
-        .status-item .label { font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.5px; }
-        .status-item .value { font-size: 1.5rem; font-weight: 700; color: #fff; line-height: 1.2; }
+        .status-item .label { font-size: 0.65rem; text-transform: uppercase; color: #888; letter-spacing: 0.5px; }
+        .status-item .value { font-size: 1.5rem; font-weight: 700; color: #1a1a2e; line-height: 1.2; }
         .status-item .value.small { font-size: 1.1rem; }
-        .status-item.heater-on { border-left: 4px solid #ff6b6b; }
-        .status-item.heater-off { border-left: 4px solid #4a4e58; }
+        .status-item.heater-on { border-left: 4px solid #e74c3c; }
+        .status-item.heater-off { border-left: 4px solid #bdc3c7; }
+        .status-item .value.status-running { color: #27ae60; }
+        .status-item .value.status-error { color: #e74c3c; }
+        .status-item .value.status-done { color: #2980b9; }
         
+        /* ===== КАРТОЧКИ ===== */
         .card {
-            background: #1a1d24;
-            border: 1px solid #2a2e38;
+            background: #ffffff;
+            border: 1px solid #dce1e8;
             border-radius: 12px;
             padding: 16px 20px;
             margin-bottom: 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
         }
         .card-title {
             font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-            color: #00a8cc;
+            color: #e67e22;
             margin-bottom: 10px;
             font-weight: 700;
         }
         
+        /* ===== КНОПКИ ===== */
         .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
         .btn {
             padding: 10px 22px;
@@ -113,18 +124,19 @@
             min-width: 44px;
         }
         .btn:active { transform: scale(0.96); }
-        .btn-primary { background: #00a8cc; color: #000; }
-        .btn-primary:hover { background: #00bcd4; }
-        .btn-success { background: #4ade80; color: #000; }
-        .btn-success:hover { background: #5eea90; }
-        .btn-danger { background: #ff5252; color: #fff; }
-        .btn-danger:hover { background: #ff6b6b; }
-        .btn-warning { background: #ffd93d; color: #000; }
-        .btn-warning:hover { background: #ffe44d; }
-        .btn-outline { background: transparent; color: #e2e8f0; border: 1px solid #4a4e58; }
-        .btn-outline:hover { background: #2a2e38; }
+        .btn-primary { background: #3498db; color: #fff; }
+        .btn-primary:hover { background: #2980b9; }
+        .btn-success { background: #27ae60; color: #fff; }
+        .btn-success:hover { background: #219a52; }
+        .btn-danger { background: #e74c3c; color: #fff; }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-warning { background: #f39c12; color: #fff; }
+        .btn-warning:hover { background: #d68910; }
+        .btn-outline { background: transparent; color: #555; border: 1px solid #dce1e8; }
+        .btn-outline:hover { background: #f0f2f5; }
         .btn-sm { padding: 6px 14px; font-size: 0.75rem; min-height: 32px; min-width: 32px; }
         
+        /* ===== РЕЦЕПТЫ ===== */
         .recipe-selector {
             display: flex;
             gap: 10px;
@@ -136,145 +148,160 @@
             flex: 1;
             min-width: 150px;
             padding: 8px 12px;
-            background: #0b0d10;
-            color: #e2e8f0;
-            border: 1px solid #2a2e38;
+            background: #ffffff;
+            color: #1a1a2e;
+            border: 1px solid #dce1e8;
             border-radius: 6px;
             font-size: 0.9rem;
         }
-        .recipe-selector select:focus { outline: none; border-color: #00a8cc; }
+        .recipe-selector select:focus { outline: none; border-color: #e67e22; }
         .recipe-selector input {
             padding: 8px 12px;
-            background: #0b0d10;
-            color: #e2e8f0;
-            border: 1px solid #2a2e38;
+            background: #ffffff;
+            color: #1a1a2e;
+            border: 1px solid #dce1e8;
             border-radius: 6px;
             font-size: 0.9rem;
         }
-        .recipe-selector input:focus { outline: none; border-color: #00a8cc; }
+        .recipe-selector input:focus { outline: none; border-color: #e67e22; }
         .recipe-selector input[type="number"] { width: 70px; }
         .recipe-selector input[type="text"] { min-width: 120px; flex: 1; }
-        .recipe-selector label { font-size: 0.8rem; color: #94a3b8; }
+        .recipe-selector label { font-size: 0.8rem; color: #888; }
         
+        /* ===== ТАБЛИЦА (ЧЁТКИЕ ГРАНИЦЫ) ===== */
         .table-wrap { overflow-x: auto; margin: 8px 0; }
         .stage-table {
             min-width: 700px;
             width: 100%;
             border-collapse: collapse;
             font-size: 0.82rem;
+            background: #ffffff;
         }
         .stage-table th {
-            background: #0b0d10;
-            color: #94a3b8;
-            padding: 8px 6px;
+            background: #f8f9fa;
+            color: #1a1a2e;
+            padding: 10px 8px;
             text-align: center;
             font-weight: 700;
-            font-size: 0.65rem;
+            font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            border-bottom: 2px solid #2a2e38;
+            border: 1px solid #dce1e8;
         }
         .stage-table td {
-            border-bottom: 1px solid #2a2e38;
-            padding: 6px 4px;
+            border: 1px solid #dce1e8;
+            padding: 8px 6px;
             text-align: center;
             vertical-align: middle;
+            background: #ffffff;
         }
-        .stage-table tr:hover { background: #252a33; }
+        .stage-table tr:nth-child(even) td { background: #f8f9fa; }
+        .stage-table tr:hover td { background: #eef2f7; }
+        
         .stage-table input, .stage-table select {
-            background: #0b0d10;
-            color: #e2e8f0;
-            border: 1px solid #2a2e38;
+            background: #ffffff;
+            color: #1a1a2e;
+            border: 1px solid #dce1e8;
             border-radius: 4px;
             padding: 4px 6px;
             font-size: 0.75rem;
             width: 100%;
             max-width: 70px;
         }
-        .stage-table input:focus, .stage-table select:focus { outline: none; border-color: #00a8cc; }
+        .stage-table input:focus, .stage-table select:focus { outline: none; border-color: #e67e22; }
         .stage-table input[type="text"] { max-width: 90px; }
-        .stage-table input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: #00a8cc; }
+        .stage-table input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: #e67e22; }
         .stage-table select { max-width: 80px; }
+        
         .stage-table .status-dot {
             display: inline-block;
             width: 12px;
             height: 12px;
             border-radius: 50%;
             margin-left: 4px;
+            border: 1px solid #dce1e8;
         }
-        .stage-table .status-dot.active { background: #4ade80; }
-        .stage-table .status-dot.done { background: #00a8cc; }
-        .stage-table .status-dot.error { background: #ff5252; }
-        .stage-table .status-dot.waiting { background: #4a4e58; }
+        .stage-table .status-dot.active { background: #27ae60; }
+        .stage-table .status-dot.done { background: #3498db; }
+        .stage-table .status-dot.error { background: #e74c3c; }
+        .stage-table .status-dot.waiting { background: #bdc3c7; }
         
+        .stage-table .stage-active-row td { background: #eafaf1; }
+        .stage-table .stage-done-row td { background: #ebf5fb; }
+        .stage-table .stage-error-row td { background: #fdedec; }
+        
+        /* ===== ДЫМОГЕНЕРАТОР ===== */
         .smoke-panel {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
             gap: 8px;
-            background: #0b0d10;
+            background: #f8f9fa;
             padding: 12px 16px;
             border-radius: 8px;
             margin-top: 8px;
-            border: 1px solid #2a2e38;
+            border: 1px solid #dce1e8;
         }
         .smoke-item {
             text-align: center;
-            padding: 6px;
+            padding: 8px;
             border-radius: 6px;
-            background: #1a1d24;
-            border: 1px solid #2a2e38;
+            background: #ffffff;
+            border: 1px solid #dce1e8;
         }
-        .smoke-item .label { font-size: 0.6rem; text-transform: uppercase; color: #94a3b8; }
-        .smoke-item .state { font-size: 1.1rem; font-weight: 600; }
-        .smoke-item .state.on { color: #4ade80; }
-        .smoke-item .state.off { color: #4a4e58; }
-        .smoke-item .state.error { color: #ff5252; }
-        .smoke-item .state.waiting { color: #ffd93d; }
+        .smoke-item .label { font-size: 0.6rem; text-transform: uppercase; color: #888; }
+        .smoke-item .state { font-size: 1.1rem; font-weight: 600; color: #1a1a2e; }
+        .smoke-item .state.on { color: #27ae60; }
+        .smoke-item .state.off { color: #bdc3c7; }
+        .smoke-item .state.error { color: #e74c3c; }
+        .smoke-item .state.waiting { color: #f39c12; }
         
+        /* ===== СТАТУС БАР ===== */
         .stage-status-bar {
             display: flex;
-            gap: 6px;
+            gap: 8px;
             flex-wrap: wrap;
             align-items: center;
-            margin: 6px 0 10px 0;
-            padding: 6px 10px;
-            background: #0b0d10;
+            margin: 8px 0 12px 0;
+            padding: 8px 12px;
+            background: #f8f9fa;
             border-radius: 8px;
-            border: 1px solid #2a2e38;
+            border: 1px solid #dce1e8;
         }
         .stage-status-bar .dot {
             width: 16px;
             height: 16px;
             border-radius: 50%;
             display: inline-block;
-            border: 2px solid #1a1d24;
-            box-shadow: 0 0 0 1px #2a2e38;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 1px #dce1e8;
         }
-        .stage-status-bar .dot.active { background: #4ade80; }
-        .stage-status-bar .dot.done { background: #00a8cc; }
-        .stage-status-bar .dot.error { background: #ff5252; }
-        .stage-status-bar .dot.waiting { background: #4a4e58; }
-        .stage-status-bar .label { font-size: 0.7rem; color: #94a3b8; font-weight: 600; margin-right: 6px; }
-        .stage-status-bar .stage-label { font-size: 0.7rem; color: #94a3b8; }
+        .stage-status-bar .dot.active { background: #27ae60; }
+        .stage-status-bar .dot.done { background: #3498db; }
+        .stage-status-bar .dot.error { background: #e74c3c; }
+        .stage-status-bar .dot.waiting { background: #bdc3c7; }
+        .stage-status-bar .label { font-size: 0.7rem; color: #888; font-weight: 600; margin-right: 6px; }
+        .stage-status-bar .stage-label { font-size: 0.7rem; color: #555; }
         
+        /* ===== ЛОГ ===== */
         .log-panel {
-            background: #0b0d10;
+            background: #f8f9fa;
             border-radius: 8px;
             padding: 10px 14px;
             max-height: 160px;
             overflow-y: auto;
             font-family: 'Courier New', monospace;
             font-size: 0.75rem;
-            color: #94a3b8;
+            color: #555;
             margin-top: 8px;
-            border: 1px solid #2a2e38;
+            border: 1px solid #dce1e8;
         }
-        .log-panel .entry { padding: 3px 0; border-bottom: 1px solid #1a1d24; }
+        .log-panel .entry { padding: 3px 0; border-bottom: 1px solid #e8ecf1; }
         .log-panel .entry:last-child { border-bottom: none; }
-        .log-panel .entry.error { color: #ff5252; }
-        .log-panel .entry.success { color: #4ade80; }
-        .log-panel .entry.warn { color: #ffd93d; }
+        .log-panel .entry.error { color: #e74c3c; }
+        .log-panel .entry.success { color: #27ae60; }
+        .log-panel .entry.warn { color: #f39c12; }
         
+        /* ===== АДАПТИВ ===== */
         @media (max-width: 600px) {
             .status-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
             .status-item .value { font-size: 1.1rem; }
@@ -301,17 +328,15 @@
             <div id="connStatus" class="connection-status offline">⏳ Подключение...</div>
         </div>
 
-        <!-- Панель IP -->
         <div class="ip-bar">
-            <span style="font-size:0.8rem; color:#94a3b8;">🔗 IP:</span>
+            <span style="font-size:0.8rem; color:#888;">🔗 IP:</span>
             <input type="text" id="ipInput" placeholder="192.168.137.57">
             <button class="btn btn-primary btn-sm" onclick="setIP()">Подключить</button>
             <button class="btn btn-outline btn-sm" onclick="autoFindESP()">🔍 Найти</button>
             <span class="current-ip" id="currentIP"></span>
         </div>
 
-        <!-- Статус -->
-        <div class="status-grid" id="statusGrid">
+        <div class="status-grid">
             <div class="status-item"><div class="label">Статус</div><div class="value" id="sStatus">--</div></div>
             <div class="status-item"><div class="label">Этап</div><div class="value small" id="sStage">--</div></div>
             <div class="status-item"><div class="label">Осталось</div><div class="value small" id="sTimeLeft">--</div></div>
@@ -321,7 +346,6 @@
             <div class="status-item" id="heaterStatus"><div class="label">ТЭН</div><div class="value small" id="sHeater">⏸ Выкл</div></div>
         </div>
 
-        <!-- Дымогенератор -->
         <div class="card">
             <div class="card-title">💨 Дымогенератор</div>
             <div class="smoke-panel" id="smokePanel">
@@ -332,7 +356,6 @@
             </div>
         </div>
 
-        <!-- Управление -->
         <div class="card">
             <div class="card-title">🎮 Управление</div>
             <div class="btn-group">
@@ -345,7 +368,6 @@
             </div>
         </div>
 
-        <!-- Рецепты -->
         <div class="card">
             <div class="card-title">📋 Рецепты</div>
             <div class="recipe-selector">
@@ -376,15 +398,14 @@
             <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
                 <button class="btn btn-outline btn-sm" onclick="addStage()">➕ Добавить этап</button>
                 <button class="btn btn-outline btn-sm" onclick="removeLastStage()">✕ Удалить последний</button>
-                <span style="color:#94a3b8; font-size:0.75rem;">(всего 5 этапов)</span>
+                <span style="color:#888; font-size:0.75rem;">(всего 5 этапов)</span>
             </div>
         </div>
 
-        <!-- Лог -->
         <div class="card">
             <div class="card-title">📜 Журнал</div>
             <div class="log-panel" id="logPanel"><div id="logContent"></div></div>
-            <div style="font-size:0.65rem; color:#4a4e58; margin-top:6px;" id="lastUpdate">Ожидание данных...</div>
+            <div style="font-size:0.65rem; color:#aaa; margin-top:6px;" id="lastUpdate">Ожидание данных...</div>
         </div>
     </div>
 
