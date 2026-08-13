@@ -9,66 +9,124 @@
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     
     <style>
-        /* ... ВАШИ СТИЛИ ... */
         *{box-sizing:border-box;}
         body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;margin:0;padding:10px;font-size:14px;}
         .container{max-width:1200px;margin:0 auto;background:white;padding:15px;border-radius:12px;}
         h1{color:#2c3e50;font-size:24px;}
-        .btn{padding:10px 20px;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;margin:4px;}
+        
+        /* ===== КНОПКИ ===== */
+        .btn{padding:8px 12px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;margin:4px;min-height:44px;min-width:44px;touch-action:manipulation;}
         .btn-save{background:#2196F3;color:white;}
         .btn-run{background:#4CAF50;color:white;}
         .btn-stop{background:#f44336;color:white;}
         .btn-add{background:#FF9800;color:white;}
         .btn-danger{background:#f44336;color:white;}
-        .btn-small{padding:5px 10px;font-size:12px;}
-        .status-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin:10px 0;}
-        .status-item{background:#f8f9fa;padding:10px;border-radius:6px;border-left:4px solid #4CAF50;}
-        .status-item .label{font-size:0.7em;color:#888;}
-        .status-item .value{font-size:1.2em;font-weight:bold;}
-        .stage-table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px;}
-        .stage-table th{background:#2c3e50;color:white;padding:8px;}
-        .stage-table td{border:1px solid #ddd;padding:5px;text-align:center;}
-        .stage-table input[type=number]{width:55px;padding:3px;}
-        .stage-table input[type=text]{width:80px;padding:3px;}
-        .stage-table select{padding:3px;}
-        .stage-table input[type=checkbox]{width:16px;height:16px;}
+        .btn-small{padding:5px 10px;font-size:12px;min-height:34px;min-width:34px;}
+        
+        /* ===== СТАТУС ГРИД ===== */
+        .status-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin:10px 0;}
+        .status-item{background:#f8f9fa;padding:8px 10px;border-radius:6px;border-left:4px solid #4CAF50;}
+        .status-item .label{font-size:0.65em;color:#888;}
+        .status-item .value{font-size:1em;font-weight:bold;}
+        .status-item.heater-on{border-left-color:#ff6b6b;}
+        .status-item.heater-off{border-left-color:#555;}
+        
+        /* ===== ТАБЛИЦА ===== */
+        .table-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:8px -5px;padding:0 5px;}
+        .stage-table{min-width:650px;width:100%;border-collapse:collapse;font-size:11px;}
+        .stage-table th{background:#2c3e50;color:white;padding:6px 3px;text-align:center;white-space:nowrap;}
+        .stage-table td{border:1px solid #ddd;padding:4px 2px;text-align:center;vertical-align:middle;}
+        .stage-table tr:nth-child(even){background:#f8f9fa;}
+        .stage-table input[type=number]{width:45px;padding:2px;border:1px solid #ddd;border-radius:3px;font-size:10px;text-align:center;}
+        .stage-table input[type=text]{width:60px;padding:2px;border:1px solid #ddd;border-radius:3px;font-size:10px;text-align:center;}
+        .stage-table select{padding:2px;border:1px solid #ddd;border-radius:3px;font-size:9px;}
+        .stage-table input[type=checkbox]{width:14px;height:14px;cursor:pointer;}
+        
+        /* ===== СТАТУСЫ ЭТАПОВ ===== */
         .stage-active{background:#e8f5e9;}
         .stage-inactive{opacity:0.4;}
-        .stage-number{font-weight:bold;padding:4px 8px;border-radius:50%;display:inline-block;}
+        .stage-number{font-weight:bold;padding:2px 6px;border-radius:50%;display:inline-block;font-size:11px;}
         .stage-number.active{background:#4CAF50;color:white;}
         .stage-number.done{background:#2196F3;color:white;}
         .stage-number.error{background:#f44336;color:white;}
         .stage-number.waiting{background:#999;color:white;}
-        .flex{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
-        .mt-10{margin-top:10px;}
-        .toast{position:fixed;bottom:20px;right:20px;padding:15px 25px;border-radius:8px;color:white;z-index:999;display:none;font-weight:600;}
-        .toast-success{background:#4CAF50;}
-        .toast-error{background:#f44336;}
-        .toast-warning{background:#FF9800;}
-        .log-panel{background:#1a1a2e;color:#00ff88;padding:10px;border-radius:8px;max-height:150px;overflow-y:auto;font-size:12px;font-family:'Courier New',monospace;margin:10px 0;}
-        .log-panel .log-entry{padding:2px 0;border-bottom:1px solid #333;}
-        .log-panel .log-error{color:#ff6b6b;}
-        .log-panel .log-success{color:#69db7c;}
-        .log-panel .log-warn{color:#ffd93d;}
-        .smoke-panel{background:#263238;color:white;padding:15px;border-radius:8px;margin:10px 0;}
-        .smoke-panel h3{color:#ffd93d;margin:0 0 10px 0;}
-        .smoke-status{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
-        .smoke-status .item{padding:8px;border-radius:4px;text-align:center;}
-        .smoke-status .item .state{font-size:1.5em;}
-        .smoke-status .item .label{font-size:0.7em;color:#aaa;}
+        
+        /* ===== ДЫМОГЕНЕРАТОР ===== */
+        .smoke-panel{background:#263238;color:white;padding:12px;border-radius:8px;margin:10px 0;}
+        .smoke-panel h3{color:#ffd93d;margin:0 0 8px 0;font-size:16px;}
+        .smoke-status{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+        .smoke-status .item{padding:6px;border-radius:4px;text-align:center;background:#1a1a2e;}
+        .smoke-status .item .state{font-size:1.2em;}
+        .smoke-status .item .label{font-size:0.65em;color:#aaa;}
         .smoke-on{background:#2e7d32;}
         .smoke-off{background:#555;}
         .smoke-error{background:#c62828;}
         .smoke-wait{background:#f57c00;}
-        .stage-status-bar{display:flex;gap:8px;flex-wrap:wrap;margin:5px 0;align-items:center;}
-        .stage-status-bar .dot{width:14px;height:14px;border-radius:50%;display:inline-block;border:2px solid #fff;box-shadow:0 0 4px rgba(0,0,0,0.3);}
+        
+        /* ===== СТАТУС БАР ===== */
+        .stage-status-bar{display:flex;gap:6px;flex-wrap:wrap;margin:5px 0;align-items:center;}
+        .stage-status-bar .dot{width:12px;height:12px;border-radius:50%;display:inline-block;border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,0.3);}
         .stage-status-bar .dot.active{background:#4CAF50;}
         .stage-status-bar .dot.done{background:#2196F3;}
         .stage-status-bar .dot.error{background:#f44336;}
         .stage-status-bar .dot.waiting{background:#999;}
-        .stage-status-bar .label{font-size:11px;color:#666;font-weight:bold;}
-        @media(max-width:768px){.status-grid{grid-template-columns:repeat(3,1fr);}.stage-table{min-width:600px;}}
-        @media(max-width:480px){.status-grid{grid-template-columns:repeat(2,1fr);}}
+        .stage-status-bar .label{font-size:10px;color:#666;font-weight:bold;}
+        
+        /* ===== ЛОГ ===== */
+        .log-panel{background:#1a1a2e;color:#00ff88;padding:8px;border-radius:8px;max-height:120px;overflow-y:auto;font-size:11px;font-family:'Courier New',monospace;margin:10px 0;}
+        .log-panel .log-entry{padding:2px 0;border-bottom:1px solid #333;}
+        .log-panel .log-error{color:#ff6b6b;}
+        .log-panel .log-success{color:#69db7c;}
+        .log-panel .log-warn{color:#ffd93d;}
+        
+        .flex{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+        .mt-10{margin-top:10px;}
+        
+        /* ===== TOAST ===== */
+        .toast{position:fixed;bottom:20px;right:20px;padding:12px 20px;border-radius:8px;color:white;z-index:999;display:none;font-weight:600;font-size:13px;max-width:90%;}
+        .toast-success{background:#4CAF50;}
+        .toast-error{background:#f44336;}
+        .toast-warning{background:#FF9800;}
+        
+        /* ===== АДАПТИВ ===== */
+        @media(max-width:768px){
+            body{padding:5px;font-size:12px;}
+            .container{padding:8px;}
+            h1{font-size:18px;}
+            
+            .status-grid{grid-template-columns:repeat(3,1fr);gap:4px;}
+            .status-item{padding:4px 6px;}
+            .status-item .value{font-size:13px;}
+            .status-item .label{font-size:9px;}
+            
+            .stage-table{min-width:550px;font-size:10px;}
+            .stage-table th,.stage-table td{padding:3px 2px;}
+            .stage-table input[type=number]{width:35px;font-size:9px;padding:1px;}
+            .stage-table input[type=text]{width:45px;font-size:9px;padding:1px;}
+            .stage-table select{font-size:8px;padding:1px;max-width:45px;}
+            
+            .btn{padding:5px 8px;font-size:10px;min-height:34px;min-width:34px;margin:2px;}
+            .btn-small{font-size:9px;padding:3px 6px;min-height:28px;min-width:28px;}
+            
+            .smoke-status{grid-template-columns:repeat(2,1fr);gap:4px;}
+            .smoke-status .item .state{font-size:1em;}
+            
+            .log-panel{max-height:80px;font-size:10px;}
+            .toast{font-size:11px;padding:8px 14px;bottom:10px;right:10px;left:10px;}
+        }
+        
+        @media(max-width:480px){
+            .status-grid{grid-template-columns:repeat(2,1fr);gap:3px;}
+            .stage-table{min-width:450px;font-size:9px;}
+            .stage-table input[type=number]{width:28px;font-size:8px;}
+            .stage-table input[type=text]{width:35px;font-size:8px;}
+            .stage-table select{font-size:7px;max-width:35px;}
+            .btn{font-size:9px;padding:4px 6px;min-height:30px;min-width:30px;}
+            .container{padding:4px;}
+            .smoke-panel h3{font-size:13px;}
+            .smoke-status .item .state{font-size:0.9em;}
+            .stage-number{font-size:9px;padding:1px 4px;}
+        }
     </style>
 </head>
 <body>
@@ -76,6 +134,7 @@
     <h1>🔥 Умная коптильня</h1>
     <div id="toast" class="toast"></div>
 
+    <!-- ===== СТАТУС ===== -->
     <div class="status-grid">
         <div class="status-item"><div class="label">Статус</div><div class="value" id="statusText">Ожидание</div></div>
         <div class="status-item"><div class="label">Этап</div><div class="value" id="stageText">--</div></div>
@@ -86,6 +145,7 @@
         <div class="status-item" id="heaterStatus"><div class="label">ТЭН</div><div class="value" id="t_heater">⏸ Выкл</div></div>
     </div>
 
+    <!-- ===== ДЫМОГЕНЕРАТОР ===== -->
     <div class="smoke-panel">
         <h3>💨 Дымогенератор</h3>
         <div class="smoke-status">
@@ -96,6 +156,7 @@
         </div>
     </div>
 
+    <!-- ===== КНОПКИ ===== -->
     <div>
         <button class="btn btn-save" onclick="saveSettings()">💾 Сохранить</button>
         <button class="btn btn-run" onclick="runRecipe()" id="runBtn">▶ Запустить</button>
@@ -105,16 +166,19 @@
         <button class="btn btn-add btn-small" onclick="toggleSound()" id="soundBtn">🔊 Звук Вкл</button>
     </div>
 
+    <!-- ===== РЕЦЕПТ ===== -->
     <div class="flex">
         <label>Рецепт: <select id="recipeSelect" onchange="loadRecipe()"></select></label>
         <label>Название: <input type="text" id="recipeName"></label>
-        <label>Макс.темп: <input type="number" id="maxTemp" step="0.5" style="width:60px;"></label>
-        <label>Дельта: <input type="number" id="delta" step="0.5" style="width:60px;"></label>
+        <label>Макс.темп: <input type="number" id="maxTemp" step="0.5" style="width:55px;"></label>
+        <label>Дельта: <input type="number" id="delta" step="0.5" style="width:55px;"></label>
     </div>
 
+    <!-- ===== СТАТУС-БАР ЭТАПОВ ===== -->
     <div class="stage-status-bar" id="stageStatusBar"><span class="label">Статус этапов:</span></div>
 
-    <div style="overflow-x:auto;">
+    <!-- ===== ТАБЛИЦА (С ГОРИЗОНТАЛЬНЫМ СКРОЛЛОМ) ===== -->
+    <div class="table-wrapper">
         <table class="stage-table">
             <thead>
                 <tr>
@@ -129,11 +193,12 @@
 
     <div class="flex mt-10">
         <button class="btn btn-add btn-small" onclick="addStage()">➕ Добавить этап</button>
-        <span style="color:#888;font-size:12px;">(всего 5 этапов)</span>
+        <span style="color:#888;font-size:11px;">(всего 5 этапов)</span>
     </div>
 
+    <!-- ===== ЛОГ ===== -->
     <div class="log-panel" id="logPanel">
-        <div style="color:#888;font-size:11px;">📋 Журнал событий</div>
+        <div style="color:#888;font-size:10px;">📋 Журнал событий</div>
         <div id="logContent"></div>
     </div>
 </div>
@@ -337,14 +402,13 @@ function updateUI(data) {
     }
 }
 
-// ==================== ФУНКЦИЯ ОБНОВЛЕНИЯ ЦВЕТОВ ЭТАПОВ (ИСПРАВЛЕНА) ====================
+// ==================== ЦВЕТА ЭТАПОВ ====================
 function updateStageColors() {
     var rows = document.querySelectorAll('#stageBody tr');
     var statusBar = document.getElementById('stageStatusBar');
     if (!statusBar) return;
     statusBar.innerHTML = '<span class="label">Статус этапов:</span>';
     rows.forEach(function(row, i) {
-        // Находим или создаём .stage-number
         var num = row.querySelector('.stage-number');
         if (!num) {
             var firstTd = row.querySelector('td');
