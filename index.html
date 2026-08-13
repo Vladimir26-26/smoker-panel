@@ -14,7 +14,6 @@
         .container{max-width:1200px;margin:0 auto;background:white;padding:15px;border-radius:12px;}
         h1{color:#2c3e50;font-size:24px;}
         
-        /* ===== КНОПКИ ===== */
         .btn{padding:8px 12px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;margin:4px;min-height:44px;min-width:44px;touch-action:manipulation;}
         .btn-save{background:#2196F3;color:white;}
         .btn-run{background:#4CAF50;color:white;}
@@ -23,7 +22,6 @@
         .btn-danger{background:#f44336;color:white;}
         .btn-small{padding:5px 10px;font-size:12px;min-height:34px;min-width:34px;}
         
-        /* ===== СТАТУС ГРИД ===== */
         .status-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin:10px 0;}
         .status-item{background:#f8f9fa;padding:8px 10px;border-radius:6px;border-left:4px solid #4CAF50;}
         .status-item .label{font-size:0.65em;color:#888;}
@@ -31,7 +29,6 @@
         .status-item.heater-on{border-left-color:#ff6b6b;}
         .status-item.heater-off{border-left-color:#555;}
         
-        /* ===== СТАТУС СОЕДИНЕНИЯ ===== */
         .connection-status{display:flex;align-items:center;gap:8px;padding:6px 12px;background:#f0f0f0;border-radius:20px;font-size:12px;margin:5px 0;flex-wrap:wrap;}
         .connection-status .dot{width:10px;height:10px;border-radius:50%;display:inline-block;transition:all 0.3s;}
         .connection-status .dot.online{background:#4CAF50;animation:pulse 2s infinite;}
@@ -40,7 +37,6 @@
         .connection-status button{background:none;border:1px solid #ccc;border-radius:12px;padding:2px 8px;font-size:11px;cursor:pointer;touch-action:manipulation;min-height:28px;min-width:28px;}
         .connection-status button:hover{background:#e0e0e0;}
         
-        /* ===== ТАБЛИЦА ===== */
         .table-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:8px -5px;padding:0 5px;}
         .stage-table{min-width:650px;width:100%;border-collapse:collapse;font-size:11px;}
         .stage-table th{background:#2c3e50;color:white;padding:6px 3px;text-align:center;white-space:nowrap;}
@@ -51,7 +47,6 @@
         .stage-table select{padding:2px;border:1px solid #ddd;border-radius:3px;font-size:9px;}
         .stage-table input[type=checkbox]{width:14px;height:14px;cursor:pointer;}
         
-        /* ===== СТАТУСЫ ЭТАПОВ ===== */
         .stage-active{background:#e8f5e9;}
         .stage-inactive{opacity:0.4;}
         .stage-number{font-weight:bold;padding:2px 6px;border-radius:50%;display:inline-block;font-size:11px;}
@@ -60,7 +55,6 @@
         .stage-number.error{background:#f44336;color:white;}
         .stage-number.waiting{background:#999;color:white;}
         
-        /* ===== ДЫМОГЕНЕРАТОР ===== */
         .smoke-panel{background:#263238;color:white;padding:12px;border-radius:8px;margin:10px 0;}
         .smoke-panel h3{color:#ffd93d;margin:0 0 8px 0;font-size:16px;}
         .smoke-status{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
@@ -72,7 +66,6 @@
         .smoke-error{background:#c62828;}
         .smoke-wait{background:#f57c00;}
         
-        /* ===== СТАТУС БАР ===== */
         .stage-status-bar{display:flex;gap:6px;flex-wrap:wrap;margin:5px 0;align-items:center;}
         .stage-status-bar .dot{width:12px;height:12px;border-radius:50%;display:inline-block;border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,0.3);}
         .stage-status-bar .dot.active{background:#4CAF50;}
@@ -81,7 +74,6 @@
         .stage-status-bar .dot.waiting{background:#999;}
         .stage-status-bar .label{font-size:10px;color:#666;font-weight:bold;}
         
-        /* ===== ЛОГ ===== */
         .log-panel{background:#1a1a2e;color:#00ff88;padding:8px;border-radius:8px;max-height:120px;overflow-y:auto;font-size:11px;font-family:'Courier New',monospace;margin:10px 0;}
         .log-panel .log-entry{padding:2px 0;border-bottom:1px solid #333;}
         .log-panel .log-error{color:#ff6b6b;}
@@ -91,13 +83,11 @@
         .flex{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
         .mt-10{margin-top:10px;}
         
-        /* ===== TOAST ===== */
         .toast{position:fixed;bottom:20px;right:20px;padding:12px 20px;border-radius:8px;color:white;z-index:999;display:none;font-weight:600;font-size:13px;max-width:90%;}
         .toast-success{background:#4CAF50;}
         .toast-error{background:#f44336;}
         .toast-warning{background:#FF9800;}
         
-        /* ===== АДАПТИВ ===== */
         @media(max-width:768px){
             body{padding:5px;font-size:12px;}
             .container{padding:8px;}
@@ -138,7 +128,6 @@
     <h1>🔥 Умная коптильня</h1>
     <div id="toast" class="toast"></div>
 
-    <!-- ===== СТАТУС СОЕДИНЕНИЯ ===== -->
     <div class="connection-status">
         <span class="dot" id="connectionDot"></span>
         <span id="connectionText">Подключение...</span>
@@ -146,7 +135,6 @@
         <button onclick="reconnectMQTT()">🔄</button>
     </div>
 
-    <!-- ===== СТАТУС ===== -->
     <div class="status-grid">
         <div class="status-item"><div class="label">Статус</div><div class="value" id="statusText">Ожидание</div></div>
         <div class="status-item"><div class="label">Этап</div><div class="value" id="stageText">--</div></div>
@@ -157,7 +145,6 @@
         <div class="status-item" id="heaterStatus"><div class="label">ТЭН</div><div class="value" id="t_heater">⏸ Выкл</div></div>
     </div>
 
-    <!-- ===== ДЫМОГЕНЕРАТОР ===== -->
     <div class="smoke-panel">
         <h3>💨 Дымогенератор</h3>
         <div class="smoke-status">
@@ -168,7 +155,6 @@
         </div>
     </div>
 
-    <!-- ===== КНОПКИ ===== -->
     <div>
         <button class="btn btn-save" onclick="saveSettings()">💾 Сохранить</button>
         <button class="btn btn-run" onclick="runRecipe()" id="runBtn">▶ Запустить</button>
@@ -178,7 +164,6 @@
         <button class="btn btn-add btn-small" onclick="toggleSound()" id="soundBtn">🔊 Звук Вкл</button>
     </div>
 
-    <!-- ===== РЕЦЕПТ ===== -->
     <div class="flex">
         <label>Рецепт: <select id="recipeSelect" onchange="loadRecipe()"></select></label>
         <label>Название: <input type="text" id="recipeName"></label>
@@ -186,10 +171,8 @@
         <label>Дельта: <input type="number" id="delta" step="0.5" style="width:55px;"></label>
     </div>
 
-    <!-- ===== СТАТУС-БАР ЭТАПОВ ===== -->
     <div class="stage-status-bar" id="stageStatusBar"><span class="label">Статус этапов:</span></div>
 
-    <!-- ===== ТАБЛИЦА ===== -->
     <div class="table-wrapper">
         <table class="stage-table">
             <thead>
@@ -208,7 +191,6 @@
         <span style="color:#888;font-size:11px;">(всего 5 этапов)</span>
     </div>
 
-    <!-- ===== ЛОГ ===== -->
     <div class="log-panel" id="logPanel">
         <div style="color:#888;font-size:10px;">📋 Журнал событий</div>
         <div id="logContent"></div>
@@ -216,7 +198,7 @@
 </div>
 
 <script>
-// ==================== ПАРОЛЬ (ЗАЩИТА) ====================
+// ==================== ПАРОЛЬ ====================
 const ACCESS_PASSWORD = "kopty2026";
 
 function checkPassword() {
@@ -248,7 +230,7 @@ if (!checkPassword()) {
 }
 
 // ==================== MQTT НАСТРОЙКИ ====================
-// ИСПОЛЬЗУЕМ ЗАЩИЩЁННЫЙ WEBSOCKET ДЛЯ HTTPS
+// ВАЖНО! ИСПОЛЬЗУЕМ wss:// ДЛЯ HTTPS СТРАНИЦЫ
 const MQTT_BROKER = 'wss://broker.hivemq.com:8884/mqtt';
 const MQTT_TOPIC_STATUS = 'smoker/status';
 const MQTT_TOPIC_COMMAND = 'smoker/command';
@@ -264,14 +246,11 @@ let lastStatus = {};
 // ==================== ПОДКЛЮЧЕНИЕ К MQTT ====================
 function connectMQTT() {
     try {
-        const options = {
+        mqttClient = mqtt.connect(MQTT_BROKER, {
             reconnectPeriod: 5000,
             connectTimeout: 30000,
             keepalive: 60,
-            clean: true,
-        };
-        
-        mqttClient = mqtt.connect(MQTT_BROKER, options);
+        });
         
         mqttClient.on('connect', function() {
             console.log('✅ MQTT подключено к ' + MQTT_BROKER);
@@ -410,7 +389,6 @@ function toggleSound() {
     document.getElementById('soundBtn').textContent = soundEnabled ? '🔊 Звук Вкл' : '🔇 Звук Выкл';
 }
 
-// ==================== УВЕДОМЛЕНИЯ ====================
 function showToast(msg, type) {
     const t = document.getElementById('toast');
     t.textContent = msg;
