@@ -1,1024 +1,564 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>Умная коптильня</title>
+    
+    <!-- Подключаем MQTT библиотеку -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body {
-            font-family: 'Segoe UI', Roboto, Arial, sans-serif;
-            background: #e8ecf1;
-            color: #1a1a2e;
-            margin: 0;
-            padding: 10px;
-            min-height: 100vh;
-            font-size: 14px;
-        }
-        .container { max-width: 1200px; margin: 0 auto; }
-        
-        /* ===== ШАПКА ===== */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 12px;
-            padding: 10px 16px;
-            background: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-            border: 1px solid #d0d5dd;
-        }
-        .header h1 { margin: 0; font-size: 1.2rem; color: #1a1a2e; }
-        .header h1 span { color: #c0392b; }
-        .connection-status {
-            padding: 4px 14px;
-            border-radius: 16px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        .connection-status.online { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .connection-status.offline { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        
-        /* ===== ПАНЕЛЬ IP ===== */
-        .ip-bar {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-            flex-wrap: wrap;
-            margin-bottom: 12px;
-            padding: 8px 14px;
-            background: #ffffff;
-            border-radius: 8px;
-            border: 1px solid #d0d5dd;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-        }
-        .ip-bar input {
-            flex: 1;
-            min-width: 120px;
-            padding: 6px 10px;
-            background: #f8f9fa;
-            color: #1a1a2e;
-            border: 1px solid #d0d5dd;
-            border-radius: 5px;
-            font-size: 0.85rem;
-        }
-        .ip-bar input:focus { outline: none; border-color: #c0392b; }
-        .ip-bar .current-ip { font-size: 0.75rem; color: #666; }
-        .ip-bar .current-ip.online { color: #27ae60; }
-        .ip-bar .current-ip.offline { color: #e74c3c; }
-        
-        /* ===== СЕТКА СТАТУСА ===== */
-        .status-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-        .status-item {
-            background: #ffffff;
-            padding: 8px 12px;
-            border-radius: 8px;
-            border: 1px solid #d0d5dd;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .status-item .label { font-size: 0.6rem; text-transform: uppercase; color: #888; letter-spacing: 0.3px; }
-        .status-item .value { font-size: 1.2rem; font-weight: 700; color: #1a1a2e; line-height: 1.2; }
-        .status-item .value.small { font-size: 1rem; }
-        .status-item.heater-on { border-left: 3px solid #e74c3c; }
-        .status-item.heater-off { border-left: 3px solid #bdc3c7; }
-        
-        /* ===== КАРТОЧКИ ===== */
-        .card {
-            background: #ffffff;
-            border: 1px solid #d0d5dd;
-            border-radius: 10px;
-            padding: 12px 16px;
-            margin-bottom: 12px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-        }
-        .card-title {
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: #c0392b;
-            margin-bottom: 8px;
-            font-weight: 700;
-        }
-        
-        /* ===== КНОПКИ ===== */
-        .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
-        .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 0.8rem;
-            cursor: pointer;
-            transition: all 0.15s;
-            min-height: 38px;
-            min-width: 38px;
-        }
-        .btn:active { transform: scale(0.96); }
-        .btn-primary { background: #2980b9; color: #fff; }
-        .btn-primary:hover { background: #1f6a9e; }
-        .btn-success { background: #27ae60; color: #fff; }
-        .btn-success:hover { background: #1e8449; }
-        .btn-danger { background: #e74c3c; color: #fff; }
-        .btn-danger:hover { background: #c0392b; }
-        .btn-warning { background: #f39c12; color: #fff; }
-        .btn-warning:hover { background: #d68910; }
-        .btn-outline { background: transparent; color: #555; border: 1px solid #d0d5dd; }
-        .btn-outline:hover { background: #f0f2f5; }
-        .btn-sm { padding: 4px 10px; font-size: 0.7rem; min-height: 28px; min-width: 28px; }
-        
-        /* ===== РЕЦЕПТЫ ===== */
-        .recipe-selector {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .recipe-selector select {
-            flex: 1;
-            min-width: 120px;
-            padding: 6px 10px;
-            background: #ffffff;
-            color: #1a1a2e;
-            border: 1px solid #d0d5dd;
-            border-radius: 5px;
-            font-size: 0.85rem;
-        }
-        .recipe-selector select:focus { outline: none; border-color: #c0392b; }
-        .recipe-selector input {
-            padding: 6px 10px;
-            background: #ffffff;
-            color: #1a1a2e;
-            border: 1px solid #d0d5dd;
-            border-radius: 5px;
-            font-size: 0.85rem;
-        }
-        .recipe-selector input:focus { outline: none; border-color: #c0392b; }
-        .recipe-selector input[type="number"] { width: 60px; }
-        .recipe-selector input[type="text"] { min-width: 100px; flex: 1; }
-        .recipe-selector label { font-size: 0.75rem; color: #666; }
-        
-        /* ===== ТАБЛИЦА (ЧЁТКИЕ ГРАНИЦЫ) ===== */
-        .table-wrap { overflow-x: auto; margin: 6px 0; -webkit-overflow-scrolling: touch; }
-        .stage-table {
-            min-width: 680px;
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.78rem;
-            background: #ffffff;
-            border: 1px solid #d0d5dd;
-        }
-        .stage-table th {
-            background: #f0f2f5;
-            color: #1a1a2e;
-            padding: 8px 6px;
-            text-align: center;
-            font-weight: 700;
-            font-size: 0.6rem;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            border: 1px solid #d0d5dd;
-            position: sticky;
-            top: 0;
-        }
-        .stage-table td {
-            border: 1px solid #d0d5dd;
-            padding: 6px 4px;
-            text-align: center;
-            vertical-align: middle;
-            background: #ffffff;
-        }
-        .stage-table tr:nth-child(even) td { background: #f8f9fa; }
-        .stage-table tr:hover td { background: #eef2f7; }
-        
-        .stage-table input, .stage-table select {
-            background: #ffffff;
-            color: #1a1a2e;
-            border: 1px solid #d0d5dd;
-            border-radius: 3px;
-            padding: 3px 4px;
-            font-size: 0.7rem;
-            width: 100%;
-            max-width: 60px;
-        }
-        .stage-table input:focus, .stage-table select:focus { outline: none; border-color: #c0392b; }
-        .stage-table input[type="text"] { max-width: 80px; }
-        .stage-table input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: #c0392b; }
-        .stage-table select { max-width: 70px; }
-        
-        .stage-table .status-dot {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-left: 3px;
-            border: 1px solid #d0d5dd;
-        }
-        .stage-table .status-dot.active { background: #27ae60; border-color: #27ae60; }
-        .stage-table .status-dot.done { background: #2980b9; border-color: #2980b9; }
-        .stage-table .status-dot.error { background: #e74c3c; border-color: #e74c3c; }
-        .stage-table .status-dot.waiting { background: #bdc3c7; border-color: #bdc3c7; }
-        
-        .stage-table .stage-active-row td { background: #eafaf1; }
-        .stage-table .stage-done-row td { background: #ebf5fb; }
-        .stage-table .stage-error-row td { background: #fdedec; }
-        
-        /* ===== ДЫМОГЕНЕРАТОР ===== */
-        .smoke-panel {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-            gap: 6px;
-            background: #f8f9fa;
-            padding: 10px 14px;
-            border-radius: 6px;
-            margin-top: 6px;
-            border: 1px solid #d0d5dd;
-        }
-        .smoke-item {
-            text-align: center;
-            padding: 6px;
-            border-radius: 5px;
-            background: #ffffff;
-            border: 1px solid #d0d5dd;
-        }
-        .smoke-item .label { font-size: 0.55rem; text-transform: uppercase; color: #888; letter-spacing: 0.3px; }
-        .smoke-item .state { font-size: 1rem; font-weight: 600; color: #1a1a2e; }
-        .smoke-item .state.on { color: #27ae60; }
-        .smoke-item .state.off { color: #bdc3c7; }
-        .smoke-item .state.error { color: #e74c3c; }
-        .smoke-item .state.waiting { color: #f39c12; }
-        
-        /* ===== СТАТУС БАР ===== */
-        .stage-status-bar {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-            align-items: center;
-            margin: 6px 0 10px 0;
-            padding: 6px 10px;
-            background: #f8f9fa;
-            border-radius: 6px;
-            border: 1px solid #d0d5dd;
-        }
-        .stage-status-bar .dot {
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            display: inline-block;
-            border: 2px solid #fff;
-            box-shadow: 0 0 0 1px #d0d5dd;
-        }
-        .stage-status-bar .dot.active { background: #27ae60; }
-        .stage-status-bar .dot.done { background: #2980b9; }
-        .stage-status-bar .dot.error { background: #e74c3c; }
-        .stage-status-bar .dot.waiting { background: #bdc3c7; }
-        .stage-status-bar .label { font-size: 0.65rem; color: #666; font-weight: 600; margin-right: 4px; }
-        .stage-status-bar .stage-label { font-size: 0.65rem; color: #555; }
-        
-        /* ===== ЛОГ ===== */
-        .log-panel {
-            background: #f8f9fa;
-            border-radius: 6px;
-            padding: 8px 12px;
-            max-height: 140px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 0.7rem;
-            color: #555;
-            margin-top: 6px;
-            border: 1px solid #d0d5dd;
-        }
-        .log-panel .entry { padding: 2px 0; border-bottom: 1px solid #e8ecf1; }
-        .log-panel .entry:last-child { border-bottom: none; }
-        .log-panel .entry.error { color: #e74c3c; }
-        .log-panel .entry.success { color: #27ae60; }
-        .log-panel .entry.warn { color: #f39c12; }
-        
-        /* ===== АДАПТИВ ===== */
-        @media (max-width: 768px) {
-            body { padding: 6px; font-size: 13px; }
-            .status-grid { grid-template-columns: repeat(3, 1fr); gap: 5px; }
-            .status-item .value { font-size: 1rem; }
-            .status-item { padding: 6px 8px; }
-            .header h1 { font-size: 1rem; }
-            .btn { padding: 6px 12px; font-size: 0.75rem; min-height: 34px; }
-            .stage-table { font-size: 0.65rem; min-width: 550px; }
-            .stage-table input, .stage-table select { font-size: 0.6rem; max-width: 45px; padding: 2px; }
-            .stage-table input[type="text"] { max-width: 55px; }
-            .smoke-panel { grid-template-columns: repeat(2, 1fr); }
-            .recipe-selector input[type="text"] { min-width: 70px; }
-            .ip-bar { flex-direction: column; align-items: stretch; }
-        }
-        @media (max-width: 480px) {
-            .status-grid { grid-template-columns: repeat(2, 1fr); }
-            .header { flex-direction: column; align-items: stretch; }
-            .stage-table { font-size: 0.55rem; min-width: 480px; }
-            .stage-table th, .stage-table td { padding: 4px 3px; }
-            .stage-table input, .stage-table select { max-width: 35px; font-size: 0.55rem; }
-            .stage-table input[type="text"] { max-width: 45px; }
-            .recipe-selector { flex-direction: column; align-items: stretch; }
-            .recipe-selector input[type="number"] { width: 100%; }
-        }
+        /* ... ВАШИ СТИЛИ ... */
+        *{box-sizing:border-box;}
+        body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;margin:0;padding:10px;font-size:14px;}
+        .container{max-width:1200px;margin:0 auto;background:white;padding:15px;border-radius:12px;}
+        h1{color:#2c3e50;font-size:24px;}
+        .btn{padding:10px 20px;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;margin:4px;}
+        .btn-save{background:#2196F3;color:white;}
+        .btn-run{background:#4CAF50;color:white;}
+        .btn-stop{background:#f44336;color:white;}
+        .btn-add{background:#FF9800;color:white;}
+        .btn-danger{background:#f44336;color:white;}
+        .btn-small{padding:5px 10px;font-size:12px;}
+        .status-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin:10px 0;}
+        .status-item{background:#f8f9fa;padding:10px;border-radius:6px;border-left:4px solid #4CAF50;}
+        .status-item .label{font-size:0.7em;color:#888;}
+        .status-item .value{font-size:1.2em;font-weight:bold;}
+        .stage-table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px;}
+        .stage-table th{background:#2c3e50;color:white;padding:8px;}
+        .stage-table td{border:1px solid #ddd;padding:5px;text-align:center;}
+        .stage-table input[type=number]{width:55px;padding:3px;}
+        .stage-table input[type=text]{width:80px;padding:3px;}
+        .stage-table select{padding:3px;}
+        .stage-table input[type=checkbox]{width:16px;height:16px;}
+        .stage-active{background:#e8f5e9;}
+        .stage-inactive{opacity:0.4;}
+        .flex{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+        .mt-10{margin-top:10px;}
+        .toast{position:fixed;bottom:20px;right:20px;padding:15px 25px;border-radius:8px;color:white;z-index:999;display:none;font-weight:600;}
+        .toast-success{background:#4CAF50;}
+        .toast-error{background:#f44336;}
+        .toast-warning{background:#FF9800;}
+        .log-panel{background:#1a1a2e;color:#00ff88;padding:10px;border-radius:8px;max-height:150px;overflow-y:auto;font-size:12px;font-family:'Courier New',monospace;margin:10px 0;}
+        .log-panel .log-entry{padding:2px 0;border-bottom:1px solid #333;}
+        .log-panel .log-error{color:#ff6b6b;}
+        .log-panel .log-success{color:#69db7c;}
+        .log-panel .log-warn{color:#ffd93d;}
+        .smoke-panel{background:#263238;color:white;padding:15px;border-radius:8px;margin:10px 0;}
+        .smoke-panel h3{color:#ffd93d;margin:0 0 10px 0;}
+        .smoke-status{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+        .smoke-status .item{padding:8px;border-radius:4px;text-align:center;}
+        .smoke-status .item .state{font-size:1.5em;}
+        .smoke-status .item .label{font-size:0.7em;color:#aaa;}
+        .smoke-on{background:#2e7d32;}
+        .smoke-off{background:#555;}
+        .smoke-error{background:#c62828;}
+        .smoke-wait{background:#f57c00;}
+        .stage-status-bar{display:flex;gap:8px;flex-wrap:wrap;margin:5px 0;align-items:center;}
+        .stage-status-bar .dot{width:14px;height:14px;border-radius:50%;display:inline-block;border:2px solid #fff;box-shadow:0 0 4px rgba(0,0,0,0.3);}
+        .stage-status-bar .dot.active{background:#4CAF50;}
+        .stage-status-bar .dot.done{background:#2196F3;}
+        .stage-status-bar .dot.error{background:#f44336;}
+        .stage-status-bar .dot.waiting{background:#999;}
+        .stage-status-bar .label{font-size:11px;color:#666;font-weight:bold;}
+        @media(max-width:768px){.status-grid{grid-template-columns:repeat(3,1fr);}.stage-table{min-width:600px;}}
+        @media(max-width:480px){.status-grid{grid-template-columns:repeat(2,1fr);}}
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🔥 Умная <span>коптильня</span></h1>
-            <div id="connStatus" class="connection-status offline">⏳ Подключение...</div>
-        </div>
+<div class="container">
+    <h1>🔥 Умная коптильня</h1>
+    <div id="toast" class="toast"></div>
 
-        <div class="ip-bar">
-            <span style="font-size:0.75rem; color:#666;">🔗 IP:</span>
-            <input type="text" id="ipInput" placeholder="192.168.137.57" value="192.168.137.57">
-            <button class="btn btn-primary btn-sm" onclick="setIP()">Подключить</button>
-            <button class="btn btn-outline btn-sm" onclick="autoFindESP()">🔍 Найти</button>
-            <span class="current-ip" id="currentIP">192.168.137.57 (сохранён)</span>
-        </div>
+    <div class="status-grid">
+        <div class="status-item"><div class="label">Статус</div><div class="value" id="statusText">Ожидание</div></div>
+        <div class="status-item"><div class="label">Этап</div><div class="value" id="stageText">--</div></div>
+        <div class="status-item"><div class="label">Осталось</div><div class="value" id="timeLeft">--</div></div>
+        <div class="status-item" style="border-left-color:#ff6b6b;"><div class="label">Камера</div><div class="value" id="t_cam">0.0°C</div></div>
+        <div class="status-item" style="border-left-color:#4ecdc4;"><div class="label">Батон</div><div class="value" id="t_bat">0.0°C</div></div>
+        <div class="status-item" style="border-left-color:#ffd93d;"><div class="label">Дым</div><div class="value" id="t_smk">0.0°C</div></div>
+        <div class="status-item" id="heaterStatus"><div class="label">ТЭН</div><div class="value" id="t_heater">⏸ Выкл</div></div>
+    </div>
 
-        <div class="status-grid">
-            <div class="status-item"><div class="label">Статус</div><div class="value" id="sStatus">Ожидание</div></div>
-            <div class="status-item"><div class="label">Этап</div><div class="value small" id="sStage">--</div></div>
-            <div class="status-item"><div class="label">Осталось</div><div class="value small" id="sTimeLeft">--</div></div>
-            <div class="status-item"><div class="label">Камера</div><div class="value" id="sCam">0.0°C</div></div>
-            <div class="status-item"><div class="label">Батон</div><div class="value" id="sBat">0.0°C</div></div>
-            <div class="status-item"><div class="label">Дым</div><div class="value" id="sSmk">0.0°C</div></div>
-            <div class="status-item" id="heaterStatus"><div class="label">ТЭН</div><div class="value small" id="sHeater">⏸ Выкл</div></div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">💨 Дымогенератор</div>
-            <div class="smoke-panel">
-                <div class="smoke-item"><div class="label">Заслонка</div><div class="state off" id="smokeSolenoid">🔒 Закрыта</div></div>
-                <div class="smoke-item"><div class="label">Вентилятор</div><div class="state off" id="smokeFan">⏸ Выкл</div></div>
-                <div class="smoke-item"><div class="label">Свеча</div><div class="state off" id="smokeGlow">⏸ Выкл</div></div>
-                <div class="smoke-item"><div class="label">Статус</div><div class="state waiting" id="smokeState">Ожидание</div></div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">🎮 Управление</div>
-            <div class="btn-group">
-                <button class="btn btn-success" id="btnRun" onclick="runRecipe()">▶ Запустить</button>
-                <button class="btn btn-danger" id="btnStop" onclick="stopRecipe()" style="display:none;">⏹ Стоп</button>
-                <button class="btn btn-primary" onclick="saveRecipe()">💾 Сохранить</button>
-                <button class="btn btn-warning" onclick="addRecipe()">➕ Новый</button>
-                <button class="btn btn-danger" onclick="deleteRecipe()">🗑 Удалить</button>
-                <button class="btn btn-outline btn-sm" onclick="toggleSound()" id="soundBtn">🔊 Звук Вкл</button>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">📋 Рецепты</div>
-            <div class="recipe-selector">
-                <label>Рецепт:</label>
-                <select id="recipeSelect"></select>
-                <label>Название:</label>
-                <input type="text" id="recipeName" value="Грудинка томленая">
-                <label>Макс.темп:</label>
-                <input type="number" id="maxTemp" step="0.5" value="74">
-                <label>Дельта:</label>
-                <input type="number" id="deltaVal" step="0.5" value="18">
-            </div>
-
-            <div class="stage-status-bar" id="stageStatusBar">
-                <span class="label">Статус этапов:</span>
-            </div>
-
-            <div class="table-wrap">
-                <table class="stage-table">
-                    <thead><tr>
-                        <th>#</th><th>Название</th><th>Актив</th><th>Tкам</th><th>Tбат</th>
-                        <th>Время(ч)</th><th>Дым</th><th>Вода</th><th>Реж.охл</th>
-                        <th>Tохл</th><th>Таймаут</th><th>Удерж</th><th>Мин</th><th></th>
-                    </tr></thead>
-                    <tbody id="stageBody"></tbody>
-                </table>
-            </div>
-            <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-                <button class="btn btn-outline btn-sm" onclick="addStage()">➕ Добавить этап</button>
-                <button class="btn btn-outline btn-sm" onclick="removeLastStage()">✕ Удалить последний</button>
-                <span style="color:#888; font-size:0.7rem;">(всего 5 этапов)</span>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">📜 Журнал</div>
-            <div class="log-panel" id="logPanel"><div id="logContent"></div></div>
-            <div style="font-size:0.6rem; color:#999; margin-top:4px;" id="lastUpdate">Ожидание данных...</div>
+    <div class="smoke-panel">
+        <h3>💨 Дымогенератор</h3>
+        <div class="smoke-status">
+            <div class="item"><div class="label">Заслонка</div><div class="state" id="smokeSolenoid">🔒</div></div>
+            <div class="item"><div class="label">Вентилятор</div><div class="state" id="smokeFan">⏸</div></div>
+            <div class="item"><div class="label">Свеча</div><div class="state" id="smokeGlow">⏸</div></div>
+            <div class="item"><div class="label">Статус</div><div class="state" id="smokeState">Ожидание</div></div>
         </div>
     </div>
 
-    <script>
-        // ==================== КОНФИГ ====================
-        let ESP_IP = localStorage.getItem('esp_ip') || '192.168.137.57';
-        let API_BASE = `http://${ESP_IP}`;
-        let recipes = [];
-        let currentRecipeIndex = 0;
-        let isRunning = false;
-        let statusInterval = null;
-        let logLines = [];
-        let soundEnabled = true;
-        let audioCtx = null;
-        let lastStatus = {};
+    <div>
+        <button class="btn btn-save" onclick="saveSettings()">💾 Сохранить</button>
+        <button class="btn btn-run" onclick="runRecipe()" id="runBtn">▶ Запустить</button>
+        <button class="btn btn-stop" onclick="stopRecipe()" id="stopBtn" style="display:none">⏹ Стоп</button>
+        <button class="btn btn-add" onclick="addRecipe()">➕ Новый</button>
+        <button class="btn btn-danger" onclick="deleteRecipe()">🗑 Удалить</button>
+        <button class="btn btn-add btn-small" onclick="toggleSound()" id="soundBtn">🔊 Звук Вкл</button>
+    </div>
 
-        function setConnStatus(online, msg) {
-            const el = document.getElementById('connStatus');
-            el.textContent = msg || (online ? '✅ Онлайн' : '❌ Офлайн');
-            el.className = 'connection-status ' + (online ? 'online' : 'offline');
-        }
+    <div class="flex">
+        <label>Рецепт: <select id="recipeSelect" onchange="loadRecipe()"></select></label>
+        <label>Название: <input type="text" id="recipeName"></label>
+        <label>Макс.темп: <input type="number" id="maxTemp" step="0.5" style="width:60px;"></label>
+        <label>Дельта: <input type="number" id="delta" step="0.5" style="width:60px;"></label>
+    </div>
 
-        function addLog(msg, type = 'info') {
-            const time = new Date().toLocaleTimeString();
-            logLines.unshift({ time, msg, type });
-            if (logLines.length > 50) logLines.pop();
-            renderLog();
-        }
+    <div class="stage-status-bar" id="stageStatusBar"><span class="label">Статус этапов:</span></div>
 
-        function renderLog() {
-            const container = document.getElementById('logContent');
-            container.innerHTML = logLines.map(e =>
-                `<div class="entry ${e.type}">[${e.time}] ${e.msg}</div>`
-            ).join('');
-        }
+    <div style="overflow-x:auto;">
+        <table class="stage-table">
+            <thead>
+                <tr>
+                    <th>#</th><th>Название</th><th>Актив</th><th>Tкам</th><th>Tбат</th>
+                    <th>Время(ч)</th><th>Дым</th><th>Вода</th><th>Реж.охл</th>
+                    <th>Tохл</th><th>Таймаут</th><th>Удерж</th><th>Мин</th><th></th>
+                </tr>
+            </thead>
+            <tbody id="stageBody"></tbody>
+        </table>
+    </div>
 
-        async function fetchAPI(url, options = {}) {
-            try {
-                const response = await fetch(`${API_BASE}${url}`, {
-                    ...options,
-                    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }
-                });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                return await response.json();
-            } catch (e) {
-                setConnStatus(false, '❌ ' + e.message);
-                throw e;
-            }
-        }
+    <div class="flex mt-10">
+        <button class="btn btn-add btn-small" onclick="addStage()">➕ Добавить этап</button>
+        <span style="color:#888;font-size:12px;">(всего 5 этапов)</span>
+    </div>
 
-        // ==================== ЗВУК ====================
-        function initAudio() {
-            if (!audioCtx) {
-                try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
-            }
-        }
+    <div class="log-panel" id="logPanel">
+        <div style="color:#888;font-size:11px;">📋 Журнал событий</div>
+        <div id="logContent"></div>
+    </div>
+</div>
 
-        function playBeep(freq, dur, vol) {
-            if (!soundEnabled) return;
-            try {
-                initAudio();
-                if (!audioCtx) return;
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.frequency.value = freq;
-                osc.type = 'square';
-                gain.gain.value = vol || 0.3;
-                osc.start();
-                setTimeout(() => osc.stop(), dur);
-            } catch(e) {}
-        }
+<script>
+// ==================== НАСТРОЙКИ ====================
+// IP ESP32 (если доступен локально)
+const ESP32_IP = "192.168.137.164";  // Ваш IP
+const ESP32_URL = `http://${ESP32_IP}`;
 
-        function playSuccess() {
-            playBeep(2000, 150);
-            setTimeout(() => playBeep(2000, 150), 250);
-            setTimeout(() => playBeep(2000, 150), 500);
-        }
-        function playError() {
-            for (let i = 0; i < 5; i++) {
-                setTimeout(() => playBeep(1000, 400), i * 600);
-            }
-        }
-        function playWarning() {
-            playBeep(1500, 150);
-            setTimeout(() => playBeep(1500, 150), 300);
-        }
-        function playStageComplete() { playBeep(2000, 400); }
-        function playRecipeComplete() {
-            playBeep(523, 200);
-            setTimeout(() => playBeep(659, 200), 250);
-            setTimeout(() => playBeep(784, 200), 500);
-            setTimeout(() => playBeep(1047, 400), 750);
-        }
-        function playEmergencyStop() {
-            for (let i = 0; i < 10; i++) {
-                setTimeout(() => playBeep(800, 100), i * 200);
-            }
-        }
+// ==================== СОСТОЯНИЕ ====================
+let currentIdx = 0;
+let recipes = [];
+let stageStatus = [];
+let audioCtx = null;
+let soundEnabled = true;
+let lastStatus = {};
 
-        function toggleSound() {
-            soundEnabled = !soundEnabled;
-            document.getElementById('soundBtn').textContent = soundEnabled ? '🔊 Звук Вкл' : '🔇 Звук Выкл';
-            localStorage.setItem('sound_enabled', String(soundEnabled));
-        }
+// ==================== ЗВУК ====================
+function initAudio() {
+    if (!audioCtx) {
+        try { audioCtx = new(window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+    }
+}
 
-        // ==================== УПРАВЛЕНИЕ IP ====================
-        function setIP() {
-            const ip = document.getElementById('ipInput').value.trim();
-            if (!ip) { addLog('❌ Введите IP адрес', 'error'); return; }
-            ESP_IP = ip;
-            API_BASE = `http://${ip}`;
-            localStorage.setItem('esp_ip', ip);
-            document.getElementById('currentIP').textContent = `📍 ${ip} (сохранён)`;
-            document.getElementById('currentIP').className = 'current-ip';
-            addLog(`🔗 Подключение к ${ip}...`, 'info');
-            if (statusInterval) clearInterval(statusInterval);
-            loadRecipesFromESP();
-            statusInterval = setInterval(updateStatus, 1500);
-        }
+function playBeep(freq, dur, vol) {
+    if (!soundEnabled) return;
+    try {
+        initAudio();
+        if (!audioCtx) return;
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.value = freq;
+        osc.type = 'square';
+        gain.gain.value = vol || 0.3;
+        osc.start();
+        setTimeout(function() { osc.stop(); }, dur);
+    } catch(e) {}
+}
 
-        async function autoFindESP() {
-            addLog('🔍 Поиск ESP32 в сети...', 'info');
-            const ips = [
-                '192.168.137.57',
-                '192.168.1.100',
-                '192.168.1.101',
-                '192.168.0.100',
-                '192.168.0.101',
-                '192.168.137.1',
-                'koptilnya.local'
-            ];
+function playSuccess() {
+    playBeep(2000, 150);
+    setTimeout(function() { playBeep(2000, 150); }, 250);
+    setTimeout(function() { playBeep(2000, 150); }, 500);
+}
 
-            for (const ip of ips) {
-                try {
-                    const controller = new AbortController();
-                    const timeout = setTimeout(() => controller.abort(), 700);
-                    const response = await fetch(`http://${ip}/api/status`, {
-                        signal: controller.signal
-                    });
-                    clearTimeout(timeout);
-                    if (response.ok) {
-                        document.getElementById('ipInput').value = ip;
-                        ESP_IP = ip;
-                        API_BASE = `http://${ip}`;
-                        localStorage.setItem('esp_ip', ip);
-                        document.getElementById('currentIP').textContent = `📍 ${ip} (найден)`;
-                        document.getElementById('currentIP').className = 'current-ip online';
-                        addLog(`✅ ESP32 найдена: ${ip}`, 'success');
-                        if (statusInterval) clearInterval(statusInterval);
-                        loadRecipesFromESP();
-                        statusInterval = setInterval(updateStatus, 1500);
-                        return;
-                    }
-                } catch (e) {}
-            }
-            addLog('❌ ESP32 не найдена. Введите IP вручную.', 'error');
-            document.getElementById('currentIP').className = 'current-ip offline';
-        }
+function playError() {
+    for (var i = 0; i < 5; i++) {
+        setTimeout(function(i) { return function() { playBeep(1000, 400); }; }(i), i * 600);
+    }
+}
 
-        // ==================== РЕЦЕПТЫ ====================
-        async function loadRecipesFromESP() {
-            try {
-                const data = await fetchAPI('/api/recipes');
-                recipes = data.recipes || [];
-                fillRecipeSelect();
-                if (recipes.length) loadRecipe(0);
-                setConnStatus(true, '✅ Онлайн');
-                addLog('Рецепты загружены (' + recipes.length + ' шт.)', 'success');
-            } catch (e) {
-                addLog('Ошибка загрузки: ' + e.message, 'error');
-                if (!recipes.length) {
-                    recipes = generateDemoRecipes();
-                    fillRecipeSelect();
-                    loadRecipe(0);
-                    addLog('💾 Демо-рецепты (ESP не найдена)', 'warn');
-                }
-            }
-        }
+function playWarning() {
+    playBeep(1500, 150);
+    setTimeout(function() { playBeep(1500, 150); }, 300);
+}
 
-        function generateDemoRecipes() {
-            return [{
-                name: 'Грудинка томленая',
-                maxCameraTemp: 74,
-                deltaCelsius: 18,
-                stages: [
-                    { active: true, name: 'Подсушка', targetCameraTemp: 18, targetBatonTemp: 45, durationHours: 0, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 },
-                    { active: true, name: 'Дымление', targetCameraTemp: 45, targetBatonTemp: 0, durationHours: 1, smokeOn: true, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 },
-                    { active: true, name: 'Ферментация', targetCameraTemp: 50, targetBatonTemp: 50, durationHours: 0.5, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 },
-                    { active: true, name: 'Томление', targetCameraTemp: 73, targetBatonTemp: 73, durationHours: 6, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 },
-                    { active: true, name: 'Охлаждение', targetCameraTemp: 15, targetBatonTemp: 15, durationHours: 0, smokeOn: false, waterOn: true, coolMode: 1, coolTargetTemp: 15, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 }
-                ]
-            }];
-        }
+function playStageComplete() { playBeep(2000, 400); }
+function playRecipeComplete() {
+    playBeep(523, 200);
+    setTimeout(function() { playBeep(659, 200); }, 250);
+    setTimeout(function() { playBeep(784, 200); }, 500);
+    setTimeout(function() { playBeep(1047, 400); }, 750);
+}
+function playEmergencyStop() {
+    for (var i = 0; i < 10; i++) {
+        setTimeout(function(i) { return function() { playBeep(800, 100); }; }(i), i * 200);
+    }
+}
 
-        function fillRecipeSelect() {
-            const sel = document.getElementById('recipeSelect');
-            sel.innerHTML = '';
-            recipes.forEach((r, i) => {
-                const opt = document.createElement('option');
-                opt.value = i;
-                opt.textContent = (i+1) + '. ' + (r.name || 'Рецепт '+(i+1));
-                sel.appendChild(opt);
-            });
-        }
+function toggleSound() {
+    soundEnabled = !soundEnabled;
+    document.getElementById('soundBtn').textContent = soundEnabled ? '🔊 Звук Вкл' : '🔇 Звук Выкл';
+}
 
-        function loadRecipe(index) {
-            currentRecipeIndex = index;
-            const r = recipes[index];
-            if (!r) return;
-            document.getElementById('recipeName').value = r.name || '';
-            document.getElementById('maxTemp').value = r.maxCameraTemp || 80;
-            document.getElementById('deltaVal').value = r.deltaCelsius || 18;
-            renderStages(r.stages || []);
-            document.getElementById('recipeSelect').value = index;
-            updateStageStatusBar();
-        }
+// ==================== УВЕДОМЛЕНИЯ ====================
+function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + (type === 'success' ? 'toast-success' : type === 'error' ? 'toast-error' : 'toast-warning');
+    t.style.display = 'block';
+    setTimeout(function() { t.style.display = 'none'; }, 4000);
+}
 
-        function renderStages(stages) {
-            const tbody = document.getElementById('stageBody');
-            tbody.innerHTML = '';
-            const maxStages = 5;
-            for (let i = 0; i < maxStages; i++) {
-                const s = stages[i] || { active: false, name: 'Этап '+(i+1), targetCameraTemp: 0, targetBatonTemp: 0, durationHours: 0, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 };
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${i+1}<span class="status-dot waiting"></span></td>
-                    <td><input type="text" class="stage-name" value="${s.name||''}" data-idx="${i}" style="max-width:80px;"></td>
-                    <td><input type="checkbox" class="stage-active" ${s.active?'checked':''} data-idx="${i}"></td>
-                    <td><input type="number" class="stage-cam" step="0.5" value="${s.targetCameraTemp||0}" data-idx="${i}" style="max-width:55px;"></td>
-                    <td><input type="number" class="stage-bat" step="0.5" value="${s.targetBatonTemp||0}" data-idx="${i}" style="max-width:55px;"></td>
-                    <td><input type="number" class="stage-dur" step="0.1" value="${s.durationHours||0}" data-idx="${i}" style="max-width:50px;"></td>
-                    <td><select class="stage-smoke" data-idx="${i}">
-                        <option value="1" ${s.smokeOn?'selected':''}>ДА</option>
-                        <option value="0" ${!s.smokeOn?'selected':''}>НЕТ</option>
-                    </select></td>
-                    <td><select class="stage-water" data-idx="${i}">
-                        <option value="1" ${s.waterOn?'selected':''}>ДА</option>
-                        <option value="0" ${!s.waterOn?'selected':''}>НЕТ</option>
-                    </select></td>
-                    <td><select class="stage-cool" data-idx="${i}">
-                        <option value="0" ${s.coolMode===0?'selected':''}>Нет</option>
-                        <option value="1" ${s.coolMode===1?'selected':''}>Непрер</option>
-                        <option value="2" ${s.coolMode===2?'selected':''}>Имп</option>
-                        <option value="3" ${s.coolMode===3?'selected':''}>Имп+Т</option>
-                    </select></td>
-                    <td><input type="number" class="stage-cooltarget" step="0.5" value="${s.coolTargetTemp||0}" data-idx="${i}" style="max-width:50px;"></td>
-                    <td><input type="number" class="stage-cooltimeout" value="${s.coolTimeoutMin||0}" data-idx="${i}" style="max-width:45px;"></td>
-                    <td><select class="stage-hold" data-idx="${i}">
-                        <option value="1" ${s.requireHold?'selected':''}>ДА</option>
-                        <option value="0" ${!s.requireHold?'selected':''}>НЕТ</option>
-                    </select></td>
-                    <td><input type="number" class="stage-holdmin" step="0.5" value="${s.holdMinutes||0}" data-idx="${i}" style="max-width:45px;"></td>
-                    <td><button class="btn btn-outline btn-sm" onclick="removeStage(${i})" ${i<2?'disabled':''} style="padding:2px 6px; min-height:24px; min-width:24px; font-size:0.65rem;">✕</button></td>
-                `;
-                tbody.appendChild(tr);
-            }
-            updateStageStatusBar();
-        }
-
-        function getStagesFromUI() {
-            const stages = [];
-            const rows = document.querySelectorAll('#stageBody tr');
-            rows.forEach(row => {
-                const idx = parseInt(row.querySelector('.stage-name').dataset.idx);
-                stages[idx] = {
-                    active: row.querySelector('.stage-active').checked,
-                    name: row.querySelector('.stage-name').value || 'Этап '+(idx+1),
-                    targetCameraTemp: parseFloat(row.querySelector('.stage-cam').value) || 0,
-                    targetBatonTemp: parseFloat(row.querySelector('.stage-bat').value) || 0,
-                    durationHours: parseFloat(row.querySelector('.stage-dur').value) || 0,
-                    smokeOn: parseInt(row.querySelector('.stage-smoke').value) === 1,
-                    waterOn: parseInt(row.querySelector('.stage-water').value) === 1,
-                    maxDelta: 18,
-                    coolMode: parseInt(row.querySelector('.stage-cool').value),
-                    coolTargetTemp: parseFloat(row.querySelector('.stage-cooltarget').value) || 0,
-                    coolTimeoutMin: parseInt(row.querySelector('.stage-cooltimeout').value) || 0,
-                    requireHold: parseInt(row.querySelector('.stage-hold').value) === 1,
-                    holdMinutes: parseFloat(row.querySelector('.stage-holdmin').value) || 0
-                };
-            });
-            return stages;
-        }
-
-        function updateStageStatusBar() {
-            const bar = document.getElementById('stageStatusBar');
-            const stages = getStagesFromUI();
-            let html = '<span class="label">Статус этапов:</span>';
-            stages.forEach((s, i) => {
-                if (s) {
-                    const status = s.active ? 'active' : 'waiting';
-                    html += `<span class="dot ${status}"></span>`;
-                    html += `<span class="stage-label">${i+1}</span>`;
-                }
-            });
-            bar.innerHTML = html;
-        }
-
-        function addStage() {
-            const stages = getStagesFromUI();
-            for (let i = 0; i < 5; i++) {
-                if (!stages[i] || !stages[i].active) {
-                    if (!stages[i]) {
-                        stages[i] = { active: true, name: 'Новый этап '+(i+1), targetCameraTemp: 0, targetBatonTemp: 0, durationHours: 0, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 };
-                    } else {
-                        stages[i].active = true;
-                    }
-                    renderStages(stages);
-                    addLog('✅ Этап '+(i+1)+' добавлен', 'success');
-                    return;
-                }
-            }
-            addLog('❌ Все 5 этапов уже активны!', 'error');
-        }
-
-        function removeStage(idx) {
-            const stages = getStagesFromUI();
-            let activeCount = stages.filter(s => s && s.active).length;
-            if (activeCount <= 1) {
-                addLog('❌ Должен быть хотя бы 1 активный этап!', 'error');
-                return;
-            }
-            stages[idx].active = false;
-            renderStages(stages);
-            addLog('🗑 Этап '+(idx+1)+' удалён', 'info');
-        }
-
-        function removeLastStage() {
-            const stages = getStagesFromUI();
-            for (let i = 4; i >= 0; i--) {
-                if (stages[i] && stages[i].active) {
-                    removeStage(i);
-                    return;
-                }
-            }
-            addLog('❌ Нет активных этапов для удаления', 'error');
-        }
-
-        function addRecipe() {
-            for (let i = 0; i < 10; i++) {
-                if (!recipes[i] || recipes[i].name === 'Новый рецепт '+(i+1)) {
-                    const newRecipe = {
-                        name: 'Новый рецепт '+(i+1),
-                        maxCameraTemp: 80,
-                        deltaCelsius: 18,
-                        stages: []
-                    };
-                    for (let j = 0; j < 5; j++) {
-                        newRecipe.stages.push({
-                            active: false,
-                            name: 'Этап '+(j+1),
-                            targetCameraTemp: 0,
-                            targetBatonTemp: 0,
-                            durationHours: 0,
-                            smokeOn: false,
-                            waterOn: false,
-                            coolMode: 0,
-                            coolTargetTemp: 0,
-                            coolTimeoutMin: 0,
-                            requireHold: false,
-                            holdMinutes: 0
-                        });
-                    }
-                    recipes[i] = newRecipe;
-                    fillRecipeSelect();
-                    loadRecipe(i);
-                    addLog('✅ Новый рецепт создан: ' + newRecipe.name, 'success');
-                    return;
-                }
-            }
-            addLog('❌ Все 10 рецептов заняты!', 'error');
-        }
-
-        function deleteRecipe() {
-            if (!confirm('Удалить рецепт "' + recipes[currentRecipeIndex]?.name + '"?')) return;
-            const newRecipe = {
-                name: 'Новый рецепт '+(currentRecipeIndex+1),
-                maxCameraTemp: 80,
-                deltaCelsius: 18,
-                stages: []
-            };
-            for (let j = 0; j < 5; j++) {
-                newRecipe.stages.push({
-                    active: false,
-                    name: 'Этап '+(j+1),
-                    targetCameraTemp: 0,
-                    targetBatonTemp: 0,
-                    durationHours: 0,
-                    smokeOn: false,
-                    waterOn: false,
-                    coolMode: 0,
-                    coolTargetTemp: 0,
-                    coolTimeoutMin: 0,
-                    requireHold: false,
-                    holdMinutes: 0
-                });
-            }
-            recipes[currentRecipeIndex] = newRecipe;
-            fillRecipeSelect();
-            loadRecipe(currentRecipeIndex);
-            addLog('🗑 Рецепт удалён', 'info');
-            saveRecipe();
-        }
-
-        async function saveRecipe() {
-            const data = {
-                index: currentRecipeIndex,
-                name: document.getElementById('recipeName').value || 'Рецепт '+(currentRecipeIndex+1),
-                maxCameraTemp: parseFloat(document.getElementById('maxTemp').value) || 80,
-                deltaCelsius: parseFloat(document.getElementById('deltaVal').value) || 18,
-                stages: getStagesFromUI()
-            };
-
-            try {
-                const result = await fetchAPI('/api/recipe', {
-                    method: 'POST',
-                    body: JSON.stringify(data)
-                });
-                if (result.success) {
-                    addLog('✅ Рецепт сохранён: ' + data.name, 'success');
-                    recipes[currentRecipeIndex] = data;
-                    fillRecipeSelect();
-                    loadRecipe(currentRecipeIndex);
-                }
-            } catch (e) {
-                addLog('❌ Ошибка сохранения: ' + e.message, 'error');
-                recipes[currentRecipeIndex] = data;
-                fillRecipeSelect();
-                loadRecipe(currentRecipeIndex);
-                addLog('💾 Рецепт сохранён локально', 'info');
-            }
-        }
-
-        async function runRecipe() {
-            const idx = parseInt(document.getElementById('recipeSelect').value);
-            try {
-                const result = await fetchAPI(`/api/run?index=${idx}`, { method: 'POST' });
-                if (result.success) {
-                    isRunning = true;
-                    document.getElementById('btnRun').style.display = 'none';
-                    document.getElementById('btnStop').style.display = 'inline-block';
-                    addLog('▶️ Запущен: ' + (recipes[idx]?.name || '#'+idx), 'success');
-                    playSuccess();
-                }
-            } catch (e) {
-                addLog('❌ Ошибка запуска: ' + e.message, 'error');
-                isRunning = true;
-                document.getElementById('btnRun').style.display = 'none';
-                document.getElementById('btnStop').style.display = 'inline-block';
-                addLog('▶️ Запуск (демо)', 'info');
-                playSuccess();
-            }
-        }
-
-        async function stopRecipe() {
-            try {
-                await fetchAPI('/api/stop', { method: 'POST' });
-                isRunning = false;
-                document.getElementById('btnRun').style.display = 'inline-block';
-                document.getElementById('btnStop').style.display = 'none';
-                addLog('⏹ Остановлено', 'warn');
-                playWarning();
-            } catch (e) {
-                addLog('❌ Ошибка остановки: ' + e.message, 'error');
-                isRunning = false;
-                document.getElementById('btnRun').style.display = 'inline-block';
-                document.getElementById('btnStop').style.display = 'none';
-                addLog('⏹ Остановлено (демо)', 'warn');
-                playWarning();
-            }
-        }
-
-        async function updateStatus() {
-            try {
-                const data = await fetchAPI('/api/status');
-
-                document.getElementById('sStatus').textContent = data.status || 'Ожидание';
-                document.getElementById('sStage').textContent = data.stage || '--';
-                document.getElementById('sCam').textContent = (data.cam || 0).toFixed(1) + '°C';
-                document.getElementById('sBat').textContent = (data.bat || 0).toFixed(1) + '°C';
-                document.getElementById('sSmk').textContent = (data.smk || 0).toFixed(1) + '°C';
-
-                if (data.timeLeft && data.timeLeft > 0) {
-                    const h = Math.floor(data.timeLeft / 3600);
-                    const m = Math.floor((data.timeLeft % 3600) / 60);
-                    document.getElementById('sTimeLeft').textContent = h + 'ч ' + m + 'м';
+// ==================== РАБОТА С ESP32 ====================
+function sendCommand(cmd, data) {
+    return new Promise(function(resolve, reject) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', ESP32_URL + '/api', true);
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    resolve(xhr.responseText);
                 } else {
-                    document.getElementById('sTimeLeft').textContent = '--';
+                    reject('Ошибка: ' + xhr.status);
                 }
-
-                const heaterEl = document.getElementById('sHeater');
-                const heaterStatus = document.getElementById('heaterStatus');
-                if (data.heater) {
-                    heaterEl.textContent = '🔥 Вкл';
-                    heaterStatus.className = 'status-item heater-on';
-                } else {
-                    heaterEl.textContent = '⏸ Выкл';
-                    heaterStatus.className = 'status-item heater-off';
-                }
-
-                if (data.running) {
-                    document.getElementById('btnRun').style.display = 'none';
-                    document.getElementById('btnStop').style.display = 'inline-block';
-                    isRunning = true;
-                } else {
-                    document.getElementById('btnRun').style.display = 'inline-block';
-                    document.getElementById('btnStop').style.display = 'none';
-                    isRunning = false;
-                }
-
-                if (data.smoke) {
-                    const solenoid = document.getElementById('smokeSolenoid');
-                    solenoid.textContent = data.smoke.solenoid ? '🔓 Открыта' : '🔒 Закрыта';
-                    solenoid.className = 'state ' + (data.smoke.solenoid ? 'on' : 'off');
-
-                    const fan = document.getElementById('smokeFan');
-                    fan.textContent = data.smoke.fan ? '🌀 Вкл' : '⏸ Выкл';
-                    fan.className = 'state ' + (data.smoke.fan ? 'on' : 'off');
-
-                    const glow = document.getElementById('smokeGlow');
-                    glow.textContent = data.smoke.glow ? '🔥 Вкл' : '⏸ Выкл';
-                    glow.className = 'state ' + (data.smoke.glow ? 'on' : 'off');
-
-                    const state = document.getElementById('smokeState');
-                    state.textContent = data.smoke.state || 'Ожидание';
-                    let cls = 'waiting';
-                    if (data.smoke.state === 'Ошибка') cls = 'error';
-                    else if (data.smoke.state === 'Работает') cls = 'on';
-                    else if (data.smoke.state === 'Розжиг...' || data.smoke.state === 'Пауза 3 мин') cls = 'waiting';
-                    state.className = 'state ' + cls;
-                }
-
-                if (data.stageStatus) {
-                    const rows = document.querySelectorAll('#stageBody tr');
-                    rows.forEach((row, i) => {
-                        const dot = row.querySelector('.status-dot');
-                        if (dot) {
-                            const status = data.stageStatus[i] || 'waiting';
-                            dot.className = 'status-dot ' + status;
-                        }
-                        const cls = data.stageStatus[i] || 'waiting';
-                        row.className = 'stage-' + cls + '-row';
-                    });
-                    const bar = document.getElementById('stageStatusBar');
-                    let html = '<span class="label">Статус этапов:</span>';
-                    data.stageStatus.forEach((status, i) => {
-                        html += `<span class="dot ${status}"></span>`;
-                        html += `<span class="stage-label">${i+1}</span>`;
-                    });
-                    bar.innerHTML = html;
-                }
-
-                if (data.log) {
-                    const lines = data.log.split('\n').filter(l => l.trim());
-                    lines.forEach(line => {
-                        let type = 'info';
-                        if (line.includes('❌') || line.includes('ОШИБКА') || line.includes('АВАРИЙНАЯ')) type = 'error';
-                        else if (line.includes('✅')) type = 'success';
-                        else if (line.includes('⚠️')) type = 'warn';
-                        if (!logLines.some(e => e.msg === line)) {
-                            addLog(line, type);
-                        }
-                    });
-                }
-
-                document.getElementById('lastUpdate').textContent = 'Обновлено: ' + new Date().toLocaleTimeString();
-                setConnStatus(true, '✅ Онлайн');
-
-                if (data.hasError && !lastStatus._errorPlayed) {
-                    lastStatus._errorPlayed = true;
-                    playEmergencyStop();
-                    addLog('⚠️ АВАРИЙНАЯ ОСТАНОВКА!', 'error');
-                }
-                if (data.status === 'Завершён' && !lastStatus._completePlayed) {
-                    lastStatus._completePlayed = true;
-                    playRecipeComplete();
-                    addLog('🏁 Рецепт завершён!', 'success');
-                }
-                if (data.stage !== lastStatus._lastStage && data.status === 'Работает') {
-                    lastStatus._lastStage = data.stage;
-                    playStageComplete();
-                }
-
-            } catch (e) {
-                setConnStatus(false, '❌ ' + e.message);
             }
-        }
+        };
+        var body = 'cmd=' + encodeURIComponent(cmd) + (data ? '&data=' + encodeURIComponent(JSON.stringify(data)) : '');
+        xhr.send(body);
+    });
+}
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedIP = localStorage.getItem('esp_ip');
-            if (savedIP) {
-                document.getElementById('ipInput').value = savedIP;
-                document.getElementById('currentIP').textContent = `📍 ${savedIP} (сохранён)`;
-                ESP_IP = savedIP;
-                API_BASE = `http://${savedIP}`;
-            }
-            loadRecipesFromESP();
-            statusInterval = setInterval(updateStatus, 1500);
-            const soundState = localStorage.getItem('sound_enabled');
-            if (soundState !== null) {
-                soundEnabled = soundState === 'true';
-                document.getElementById('soundBtn').textContent = soundEnabled ? '🔊 Звук Вкл' : '🔇 Звук Выкл';
-            }
+function loadStatus() {
+    fetch(ESP32_URL + '/status')
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            updateUI(data);
+        })
+        .catch(function(err) {
+            console.log('ESP32 недоступен:', err);
+            document.getElementById('statusText').innerText = '❌ Офлайн';
         });
-    </script>
+}
+
+// ==================== UI ====================
+function updateUI(data) {
+    document.getElementById('statusText').innerText = data.status;
+    document.getElementById('stageText').innerText = data.stage;
+    document.getElementById('t_cam').innerText = data.cam.toFixed(1) + '°C';
+    document.getElementById('t_bat').innerText = data.bat.toFixed(1) + '°C';
+    document.getElementById('t_smk').innerText = data.smk.toFixed(1) + '°C';
+    
+    var heaterEl = document.getElementById('t_heater');
+    var heaterStatus = document.getElementById('heaterStatus');
+    if (data.heater) {
+        heaterEl.innerHTML = '🔥 Вкл';
+        heaterStatus.className = 'status-item heater-on';
+    } else {
+        heaterEl.innerHTML = '⏸ Выкл';
+        heaterStatus.className = 'status-item heater-off';
+    }
+    
+    if (data.timeLeft >= 0) {
+        var h = Math.floor(data.timeLeft / 3600);
+        var m = Math.floor((data.timeLeft % 3600) / 60);
+        document.getElementById('timeLeft').innerText = h + 'ч ' + m + 'м';
+    } else {
+        document.getElementById('timeLeft').innerText = '--';
+    }
+    
+    if (data.status === 'Работает') {
+        document.getElementById('runBtn').style.display = 'none';
+        document.getElementById('stopBtn').style.display = 'inline-block';
+    } else {
+        document.getElementById('runBtn').style.display = 'inline-block';
+        document.getElementById('stopBtn').style.display = 'none';
+    }
+    
+    if (data.stageStatus) { stageStatus = data.stageStatus; updateStageColors(); }
+    
+    if (data.smoke) {
+        document.getElementById('smokeSolenoid').innerHTML = data.smoke.solenoid ? '🔓 Открыта' : '🔒 Закрыта';
+        document.getElementById('smokeSolenoid').className = 'state ' + (data.smoke.solenoid ? 'smoke-on' : 'smoke-off');
+        document.getElementById('smokeFan').innerHTML = data.smoke.fan ? '🌀 Вкл' : '⏸ Выкл';
+        document.getElementById('smokeFan').className = 'state ' + (data.smoke.fan ? 'smoke-on' : 'smoke-off');
+        document.getElementById('smokeGlow').innerHTML = data.smoke.glow ? '🔥 Вкл' : '⏸ Выкл';
+        document.getElementById('smokeGlow').className = 'state ' + (data.smoke.glow ? 'smoke-on' : 'smoke-off');
+        document.getElementById('smokeState').innerHTML = data.smoke.stateText;
+        var cls = 'smoke-off';
+        if (data.smoke.stateText === 'Ошибка') cls = 'smoke-error';
+        else if (data.smoke.stateText === 'Работает') cls = 'smoke-on';
+        else if (data.smoke.stateText.includes('Розжиг') || data.smoke.stateText.includes('Пауза')) cls = 'smoke-wait';
+        document.getElementById('smokeState').className = 'state ' + cls;
+    }
+    
+    // Звук
+    if (data.hasError && !lastStatus._errorPlayed) {
+        lastStatus._errorPlayed = true;
+        playEmergencyStop();
+        showToast('⚠️ АВАРИЯ!', 'error');
+    }
+    if (data.status === 'Завершён' && !lastStatus._completePlayed) {
+        lastStatus._completePlayed = true;
+        playRecipeComplete();
+        showToast('🏁 Рецепт завершён!', 'success');
+    }
+    if (data.stage !== lastStatus._lastStage && data.status === 'Работает') {
+        lastStatus._lastStage = data.stage;
+        playStageComplete();
+    }
+    if (data.smoke && data.smoke.stateText === 'Ошибка' && data.smoke.stateText !== lastStatus._smokeState) {
+        lastStatus._smokeState = data.smoke.stateText;
+        playError();
+        showToast('❌ Ошибка дымогенератора!', 'error');
+    }
+    if (data.smoke && data.smoke.stateText === 'Работает' && data.smoke.stateText !== lastStatus._smokeState) {
+        lastStatus._smokeState = data.smoke.stateText;
+        playSuccess();
+        showToast('✅ Дымогенератор запущен!', 'success');
+    }
+    if (data.smoke && data.smoke.stateText === 'Пауза 3 мин' && data.smoke.stateText !== lastStatus._smokeState) {
+        lastStatus._smokeState = data.smoke.stateText;
+        playWarning();
+        showToast('⚠️ Повтор розжига через 3 минуты', 'warning');
+    }
+    
+    if (data.log) {
+        var logDiv = document.getElementById('logContent');
+        var lines = data.log.split('\n');
+        var html = '';
+        for (var i = 0; i < lines.length; i++) {
+            if (lines[i].trim()) {
+                var cls = '';
+                if (lines[i].includes('❌') || lines[i].includes('ОШИБКА') || lines[i].includes('АВАРИЙНАЯ')) cls = 'log-error';
+                else if (lines[i].includes('✅')) cls = 'log-success';
+                else if (lines[i].includes('⚠️')) cls = 'log-warn';
+                html += '<div class="log-entry ' + cls + '">' + lines[i] + '</div>';
+            }
+        }
+        logDiv.innerHTML = html;
+        var panel = document.getElementById('logPanel');
+        panel.scrollTop = panel.scrollHeight;
+    }
+}
+
+// ==================== РЕЦЕПТЫ ====================
+function loadRecipesList() {
+    var sel = document.getElementById('recipeSelect');
+    sel.innerHTML = '';
+    for (var i = 0; i < 10; i++) {
+        var opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = (i + 1) + '. ' + (recipes[i] ? recipes[i].name : 'Рецепт ' + (i + 1));
+        sel.appendChild(opt);
+    }
+}
+
+function loadRecipe() {
+    var idx = parseInt(document.getElementById('recipeSelect').value);
+    currentIdx = idx;
+    fetch(ESP32_URL + '/load?idx=' + idx)
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            recipes = data.recipes;
+            var recipe = recipes[idx];
+            document.getElementById('recipeName').value = recipe.name;
+            document.getElementById('maxTemp').value = recipe.maxCameraTemp;
+            document.getElementById('delta').value = recipe.deltaCelsius;
+            renderStages(recipe.stages);
+            loadRecipesList();
+            document.getElementById('recipeSelect').value = idx;
+        })
+        .catch(function(err) { showToast('Ошибка загрузки', 'error'); });
+}
+
+function renderStages(stages) {
+    var tbody = document.getElementById('stageBody');
+    tbody.innerHTML = '';
+    stages.forEach(function(s, i) {
+        var tr = document.createElement('tr');
+        tr.className = s.active ? 'stage-active' : 'stage-inactive';
+        tr.innerHTML = '<td>' + (i + 1) + '</td>' +
+            '<td><input type="text" class="stage-name" value="' + s.name + '" data-idx="' + i + '"></td>' +
+            '<td><input type="checkbox" class="stage-active-chk" ' + (s.active ? 'checked' : '') + ' data-idx="' + i + '"></td>' +
+            '<td><input type="number" class="stage-cam" step="0.1" value="' + s.targetCameraTemp + '" data-idx="' + i + '"></td>' +
+            '<td><input type="number" class="stage-bat" step="0.1" value="' + s.targetBatonTemp + '" data-idx="' + i + '"></td>' +
+            '<td><input type="number" class="stage-dur" step="0.1" value="' + s.durationHours + '" data-idx="' + i + '"></td>' +
+            '<td><select class="stage-smoke" data-idx="' + i + '"><option value="1" ' + (s.smokeOn ? 'selected' : '') + '>ДА</option><option value="0" ' + (!s.smokeOn ? 'selected' : '') + '>НЕТ</option></select></td>' +
+            '<td><select class="stage-water" data-idx="' + i + '"><option value="1" ' + (s.waterOn ? 'selected' : '') + '>ДА</option><option value="0" ' + (!s.waterOn ? 'selected' : '') + '>НЕТ</option></select></td>' +
+            '<td><select class="stage-cool" data-idx="' + i + '"><option value="0" ' + (s.coolMode == 0 ? 'selected' : '') + '>Нет</option><option value="1" ' + (s.coolMode == 1 ? 'selected' : '') + '>Непрер</option><option value="2" ' + (s.coolMode == 2 ? 'selected' : '') + '>Импульс</option><option value="3" ' + (s.coolMode == 3 ? 'selected' : '') + '>Имп+тайм</option></select></td>' +
+            '<td><input type="number" class="stage-cooltarget" step="0.1" value="' + s.coolTargetTemp + '" data-idx="' + i + '"></td>' +
+            '<td><input type="number" class="stage-cooltimeout" value="' + s.coolTimeoutMin + '" data-idx="' + i + '"></td>' +
+            '<td><select class="stage-hold" data-idx="' + i + '"><option value="1" ' + (s.requireHold ? 'selected' : '') + '>ДА</option><option value="0" ' + (!s.requireHold ? 'selected' : '') + '>НЕТ</option></select></td>' +
+            '<td><input type="number" class="stage-holdmin" step="0.5" value="' + s.holdMinutes + '" data-idx="' + i + '"></td>' +
+            '<td><button onclick="removeStage(' + i + ')" ' + (i < 2 ? 'disabled' : '') + '>✕</button></td>';
+        tbody.appendChild(tr);
+    });
+}
+
+function getStagesFromUI() {
+    var stages = [];
+    var rows = document.querySelectorAll('#stageBody tr');
+    rows.forEach(function(row) {
+        var idx = parseInt(row.querySelector('.stage-name').dataset.idx);
+        stages[idx] = {
+            active: row.querySelector('.stage-active-chk').checked,
+            name: row.querySelector('.stage-name').value || 'Этап ' + (idx + 1),
+            targetCameraTemp: parseFloat(row.querySelector('.stage-cam').value) || 0,
+            targetBatonTemp: parseFloat(row.querySelector('.stage-bat').value) || 0,
+            durationHours: parseFloat(row.querySelector('.stage-dur').value) || 0,
+            smokeOn: parseInt(row.querySelector('.stage-smoke').value) === 1,
+            waterOn: parseInt(row.querySelector('.stage-water').value) === 1,
+            coolMode: parseInt(row.querySelector('.stage-cool').value),
+            coolTargetTemp: parseFloat(row.querySelector('.stage-cooltarget').value) || 0,
+            coolTimeoutMin: parseInt(row.querySelector('.stage-cooltimeout').value) || 0,
+            requireHold: parseInt(row.querySelector('.stage-hold').value) === 1,
+            holdMinutes: parseFloat(row.querySelector('.stage-holdmin').value) || 0
+        };
+    });
+    return stages;
+}
+
+function saveSettings() {
+    var data = {
+        idx: currentIdx,
+        name: document.getElementById('recipeName').value || 'Рецепт ' + (currentIdx + 1),
+        maxCameraTemp: parseFloat(document.getElementById('maxTemp').value) || 80,
+        deltaCelsius: parseFloat(document.getElementById('delta').value) || 18,
+        stages: getStagesFromUI()
+    };
+    var jsonData = JSON.stringify(data);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', ESP32_URL + '/save', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState == 4) {
+            if (xhr.status == 200) {
+                showToast(xhr.responseText, 'success');
+                recipes[currentIdx] = data;
+                loadRecipesList();
+                document.getElementById('recipeSelect').value = currentIdx;
+            } else {
+                showToast('Ошибка: ' + xhr.status, 'error');
+            }
+        }
+    };
+    xhr.send('data=' + encodeURIComponent(jsonData));
+}
+
+function addStage() {
+    var stages = getStagesFromUI();
+    for (var i = 0; i < stages.length; i++) {
+        if (!stages[i] || !stages[i].active) {
+            if (!stages[i]) {
+                stages[i] = { active: true, name: 'Новый этап ' + (i + 1), targetCameraTemp: 0, targetBatonTemp: 0, durationHours: 0, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 };
+            } else {
+                stages[i].active = true;
+                stages[i].name = 'Новый этап ' + (i + 1);
+            }
+            renderStages(stages);
+            showToast('✅ Этап добавлен', 'success');
+            return;
+        }
+    }
+    showToast('❌ Все 5 этапов активны!', 'error');
+}
+
+function removeStage(idx) {
+    var stages = getStagesFromUI();
+    var activeCount = 0;
+    for (var i = 0; i < stages.length; i++) {
+        if (stages[i] && stages[i].active) activeCount++;
+    }
+    if (activeCount <= 1) {
+        showToast('❌ Должен быть хотя бы 1 активный этап!', 'error');
+        return;
+    }
+    stages[idx].active = false;
+    renderStages(stages);
+    showToast('✅ Этап удалён', 'success');
+}
+
+function addRecipe() {
+    for (var i = 0; i < 10; i++) {
+        if (recipes[i] && recipes[i].name === 'Новый рецепт ' + (i + 1)) {
+            currentIdx = i;
+            document.getElementById('recipeSelect').value = i;
+            loadRecipe();
+            showToast('✅ Новый рецепт создан', 'success');
+            return;
+        }
+    }
+    showToast('❌ Все 10 рецептов заняты!', 'error');
+}
+
+function deleteRecipe() {
+    if (!confirm('Удалить рецепт?')) return;
+    var data = {
+        idx: currentIdx,
+        name: 'Новый рецепт ' + (currentIdx + 1),
+        maxCameraTemp: 80,
+        deltaCelsius: 18,
+        stages: []
+    };
+    for (var i = 0; i < 5; i++) {
+        data.stages.push({ active: false, name: 'Этап ' + (i + 1), targetCameraTemp: 0, targetBatonTemp: 0, durationHours: 0, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 });
+    }
+    var jsonData = JSON.stringify(data);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', ESP32_URL + '/save', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState == 4 && xhr.status == 200) {
+            loadRecipe();
+            loadRecipesList();
+            showToast('✅ Рецепт удалён', 'success');
+        }
+    };
+    xhr.send('data=' + encodeURIComponent(jsonData));
+}
+
+function runRecipe() {
+    document.getElementById('runBtn').style.display = 'none';
+    document.getElementById('stopBtn').style.display = 'inline-block';
+    fetch(ESP32_URL + '/run').catch(function() {});
+}
+
+function stopRecipe() {
+    document.getElementById('runBtn').style.display = 'inline-block';
+    document.getElementById('stopBtn').style.display = 'none';
+    fetch(ESP32_URL + '/stop').catch(function() {});
+}
+
+function updateStageColors() {
+    var rows = document.querySelectorAll('#stageBody tr');
+    var statusBar = document.getElementById('stageStatusBar');
+    statusBar.innerHTML = '<span class="label">Статус этапов:</span>';
+    rows.forEach(function(row, i) {
+        var num = row.querySelector('.stage-number');
+        var status = stageStatus[i] || 'waiting';
+        row.className = 'stage-' + status;
+        num.className = 'stage-number ' + status;
+        var dot = document.createElement('span');
+        dot.className = 'dot ' + status;
+        dot.title = (i + 1) + '. ' + status;
+        statusBar.appendChild(dot);
+    });
+}
+
+// ==================== ЗАПУСК ====================
+loadRecipesList();
+loadRecipe();
+
+setInterval(function() {
+    loadStatus();
+}, 2000);
+</script>
 </body>
 </html>
