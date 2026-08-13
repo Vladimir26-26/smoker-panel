@@ -201,7 +201,12 @@
 </div>
 
 <script>
-// ==================== MQTT НАСТРОЙКИ ====================
+// ==================== НАСТРОЙКИ ====================
+// IP ESP32 (для локального доступа) - ИСПРАВЬТЕ НА ВАШ IP!
+const ESP32_IP = "192.168.137.178";
+const ESP32_URL = `http://${ESP32_IP}`;
+
+// ==================== MQTT ====================
 const mqttBroker = "wss://broker.emqx.io:8084/mqtt";
 let mqttConnected = false;
 
@@ -212,7 +217,6 @@ let stageStatus = [];
 let audioCtx = null;
 let soundEnabled = true;
 let lastStatus = {};
-let isLocalMode = true;
 
 // ==================== MQTT ПОДКЛЮЧЕНИЕ ====================
 const client = mqtt.connect(mqttBroker);
@@ -519,7 +523,7 @@ function loadRecipesList() {
 function loadRecipe() {
     var idx = parseInt(document.getElementById('recipeSelect').value);
     currentIdx = idx;
-    fetch('http://192.168.137.178/load?idx=' + idx)
+    fetch(ESP32_URL + '/load?idx=' + idx)
         .then(function(res) { return res.json(); })
         .then(function(data) {
             recipes = data.recipes;
@@ -592,7 +596,7 @@ function saveSettings() {
     };
     var jsonData = JSON.stringify(data);
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', 'http://192.168.137.178/save', true);
+    xhr.open('POST', ESP32_URL + '/save', true);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     xhr.onreadystatechange = function() {
         if (xhr.readyState == 4) {
@@ -669,7 +673,7 @@ function deleteRecipe() {
     }
     var jsonData = JSON.stringify(data);
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', 'http://192.168.137.178/save', true);
+    xhr.open('POST', ESP32_URL + '/save', true);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     xhr.onreadystatechange = function() {
         if (xhr.readyState == 4 && xhr.status == 200) {
