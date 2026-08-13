@@ -199,14 +199,13 @@
 </div>
 
 <script>
-// ==================== MQTT НАСТРОЙКИ ====================
+// ==================== НАСТРОЙКИ ====================
 const mqttBroker = "wss://broker.emqx.io:8084/mqtt";
 const mqttOptions = {
     clientId: "web_" + Math.random().toString(16).substr(2, 8),
-    keepalive: 30,
-    reconnectPeriod: 3000,
-    connectTimeout: 10000,
-    clean: true
+    keepalive: 60,
+    reconnectPeriod: 5000,
+    connectTimeout: 30000
 };
 
 let mqttConnected = false;
@@ -231,19 +230,16 @@ client.on('connect', function() {
     document.getElementById('mqttInfo').textContent = 'Данные поступают...';
     document.getElementById('espStatus').textContent = '🔍 ESP: онлайн';
     
-    // Подписываемся на все топики
     client.subscribe('koptilnya/status');
     client.subscribe('koptilnya/temp');
     client.subscribe('koptilnya/log');
     client.subscribe('koptilnya/save_ack');
     console.log('📡 Подписка на топики выполнена');
     
-    // Запрашиваем статус один раз при подключении
     setTimeout(function() {
         client.publish('koptilnya/command', 'status');
-    }, 500);
+    }, 1000);
     
-    // Запускаем интервал обновления статуса (РЕЖЕ!)
     if (statusInterval) {
         clearInterval(statusInterval);
     }
@@ -251,7 +247,7 @@ client.on('connect', function() {
         if (mqttConnected && !isSending) {
             client.publish('koptilnya/command', 'status');
         }
-    }, 5000); // Каждые 5 секунд вместо 2
+    }, 5000);
 });
 
 client.on('offline', function() {
@@ -349,7 +345,48 @@ function sendMQTTCommand(cmd) {
     }
 }
 
-// ==================== ЗВУК ====================
+// ==================== СОХРАНЕНИЕ ====================
+function saveSettings() {
+    var data = {
+        idx: currentIdx,
+        name: document.getElementById('recipeName').value || 'Рецепт ' + (currentIdx + 1),
+        maxCameraTemp: parseFloat(document.getElementById('maxTemp').value) || 80,
+        deltaCelsius: parseFloat(document.getElementById('delta').value) || 18,
+        stages: getStagesFromUI()
+    };
+    var jsonData = JSON.stringify(data);
+    
+    if (!mqttConnected) {
+        showToast('⚠️ MQTT не подключён', 'warning');
+        return;
+    }
+    
+    if (isSending) {
+        showToast('⏳ Подождите, предыдущая команда выполняется...', 'warning');
+        return;
+    }
+    
+    try {
+        isSending = true;
+        client.publish('koptilnya/save', jsonData);
+        showToast('⏳ Отправка...', 'warning');
+        document.getElementById('espStatus').textContent = '🔍 ESP: сохранение...';
+        console.log('📤 Сохранение:', jsonData);
+        
+        setTimeout(function() {
+            if (isSending) {
+                isSending = false;
+                document.getElementById('espStatus').textContent = '🔍 ESP: таймаут';
+                showToast('⚠️ Нет ответа от ESP', 'warning');
+            }
+        }, 10000);
+    } catch(e) {
+        isSending = false;
+        showToast('❌ Ошибка отправки', 'error');
+    }
+}
+
+// ==================== ОСТАЛЬНЫЕ ФУНКЦИИ ====================
 function initAudio() {
     if (!audioCtx) {
         try { audioCtx = new(window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
@@ -408,7 +445,6 @@ function toggleSound() {
     document.getElementById('soundBtn').textContent = soundEnabled ? '🔊 Звук Вкл' : '🔇 Звук Выкл';
 }
 
-// ==================== УВЕДОМЛЕНИЯ ====================
 function showToast(msg, type) {
     const t = document.getElementById('toast');
     t.textContent = msg;
@@ -417,7 +453,6 @@ function showToast(msg, type) {
     setTimeout(function() { t.style.display = 'none'; }, 4000);
 }
 
-// ==================== РЕЦЕПТЫ ====================
 function loadRecipesList() {
     var sel = document.getElementById('recipeSelect');
     if (!sel) return;
@@ -491,47 +526,6 @@ function getStagesFromUI() {
         };
     });
     return stages;
-}
-
-function saveSettings() {
-    var data = {
-        idx: currentIdx,
-        name: document.getElementById('recipeName').value || 'Рецепт ' + (currentIdx + 1),
-        maxCameraTemp: parseFloat(document.getElementById('maxTemp').value) || 80,
-        deltaCelsius: parseFloat(document.getElementById('delta').value) || 18,
-        stages: getStagesFromUI()
-    };
-    var jsonData = JSON.stringify(data);
-    
-    if (!mqttConnected) {
-        showToast('⚠️ MQTT не подключён', 'warning');
-        return;
-    }
-    
-    if (isSending) {
-        showToast('⏳ Подождите, предыдущая команда выполняется...', 'warning');
-        return;
-    }
-    
-    try {
-        isSending = true;
-        client.publish('koptilnya/save', jsonData);
-        showToast('⏳ Отправка...', 'warning');
-        document.getElementById('espStatus').textContent = '🔍 ESP: сохранение...';
-        console.log('📤 Сохранение:', jsonData);
-        
-        // Таймаут на случай, если не пришёл ответ
-        setTimeout(function() {
-            if (isSending) {
-                isSending = false;
-                document.getElementById('espStatus').textContent = '🔍 ESP: таймаут';
-                showToast('⚠️ Нет ответа от ESP', 'warning');
-            }
-        }, 10000);
-    } catch(e) {
-        isSending = false;
-        showToast('❌ Ошибка отправки', 'error');
-    }
 }
 
 function addStage() {
@@ -619,7 +613,7 @@ function runRecipe() {
         document.getElementById('runBtn').style.display = 'none';
         document.getElementById('stopBtn').style.display = 'inline-block';
     } else {
-        showToast('⚠️ MQTT не подключн', 'warning');
+        showToast('⚠️ MQTT не подключён', 'warning');
     }
 }
 
@@ -678,7 +672,6 @@ function initDemoRecipes() {
 // ==================== ЗАПУСК ====================
 initDemoRecipes();
 
-// Закрываем соединение при выходе со страницы
 window.addEventListener('beforeunload', function() {
     if (statusInterval) {
         clearInterval(statusInterval);
