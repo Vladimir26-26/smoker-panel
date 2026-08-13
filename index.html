@@ -102,29 +102,23 @@
             body{padding:5px;font-size:12px;}
             .container{padding:8px;}
             h1{font-size:18px;}
-            
             .status-grid{grid-template-columns:repeat(3,1fr);gap:4px;}
             .status-item{padding:4px 6px;}
             .status-item .value{font-size:13px;}
             .status-item .label{font-size:9px;}
-            
             .stage-table{min-width:550px;font-size:10px;}
             .stage-table th,.stage-table td{padding:3px 2px;}
             .stage-table input[type=number]{width:35px;font-size:9px;padding:1px;}
             .stage-table input[type=text]{width:45px;font-size:9px;padding:1px;}
             .stage-table select{font-size:8px;padding:1px;max-width:45px;}
-            
             .btn{padding:5px 8px;font-size:10px;min-height:34px;min-width:34px;margin:2px;}
             .btn-small{font-size:9px;padding:3px 6px;min-height:28px;min-width:28px;}
-            
             .smoke-status{grid-template-columns:repeat(2,1fr);gap:4px;}
             .smoke-status .item .state{font-size:1em;}
-            
             .log-panel{max-height:80px;font-size:10px;}
             .toast{font-size:11px;padding:8px 14px;bottom:10px;right:10px;left:10px;}
             .connection-status{font-size:10px;padding:4px 8px;}
         }
-        
         @media(max-width:480px){
             .status-grid{grid-template-columns:repeat(2,1fr);gap:3px;}
             .stage-table{min-width:450px;font-size:9px;}
@@ -195,7 +189,7 @@
     <!-- ===== СТАТУС-БАР ЭТАПОВ ===== -->
     <div class="stage-status-bar" id="stageStatusBar"><span class="label">Статус этапов:</span></div>
 
-    <!-- ===== ТАБЛИЦА (С ГОРИЗОНТАЛЬНЫМ СКРОЛЛОМ) ===== -->
+    <!-- ===== ТАБЛИЦА ===== -->
     <div class="table-wrapper">
         <table class="stage-table">
             <thead>
@@ -223,7 +217,7 @@
 
 <script>
 // ==================== ПАРОЛЬ (ЗАЩИТА) ====================
-const ACCESS_PASSWORD = "kopty2026";  // ИЗМЕНИТЕ НА СВОЙ ПАРОЛЬ!
+const ACCESS_PASSWORD = "kopty2026";
 
 function checkPassword() {
     const savedPassword = localStorage.getItem('smoker_password');
@@ -254,7 +248,8 @@ if (!checkPassword()) {
 }
 
 // ==================== MQTT НАСТРОЙКИ ====================
-const MQTT_BROKER = 'wss://broker.hivemq.com:8884';  // WebSocket Secure
+// Используем WebSocket (НЕ Secure) - порт 1883
+const MQTT_BROKER = 'ws://broker.hivemq.com:1883';
 const MQTT_TOPIC_STATUS = 'smoker/status';
 const MQTT_TOPIC_COMMAND = 'smoker/command';
 
@@ -277,6 +272,7 @@ function connectMQTT() {
             mqttClient.subscribe(MQTT_TOPIC_STATUS);
             mqttClient.publish(MQTT_TOPIC_COMMAND, 'status');
             showToast('✅ MQTT подключён!', 'success');
+            loadRecipe(); // Загружаем рецепты после подключения
         });
         
         mqttClient.on('message', function(topic, message) {
@@ -566,27 +562,48 @@ function loadRecipe() {
     var idx = parseInt(document.getElementById('recipeSelect').value);
     currentIdx = idx;
     
-    // Загружаем рецепт через MQTT
-    if (mqttClient && mqttClient.connected) {
-        mqttClient.publish(MQTT_TOPIC_COMMAND, 'load:' + idx);
-        // Показываем, что загружаем
-        showToast('🔄 Загрузка рецепта...', 'warning');
-    } else {
-        // Если MQTT нет, пробуем через HTTP (для совместимости)
-        fetchESP32('/load?idx=' + idx)
-            .then(function(res) { return res.json(); })
-            .then(function(data) {
-                recipes = data.recipes;
-                var recipe = recipes[idx];
-                document.getElementById('recipeName').value = recipe.name;
-                document.getElementById('maxTemp').value = recipe.maxCameraTemp;
-                document.getElementById('delta').value = recipe.deltaCelsius;
-                renderStages(recipe.stages);
-                loadRecipesList();
-                document.getElementById('recipeSelect').value = idx;
-            })
-            .catch(function(err) { showToast('❌ Ошибка загрузки', 'error'); });
+    // Если есть сохранённые рецепты - используем их
+    if (recipes && recipes.length > 0 && recipes[idx]) {
+        var recipe = recipes[idx];
+        document.getElementById('recipeName').value = recipe.name || 'Рецепт ' + (idx + 1);
+        document.getElementById('maxTemp').value = recipe.maxCameraTemp || 80;
+        document.getElementById('delta').value = recipe.deltaCelsius || 18;
+        renderStages(recipe.stages || []);
+        loadRecipesList();
+        document.getElementById('recipeSelect').value = idx;
+        return;
     }
+    
+    // Если нет рецептов - создаём пустые
+    var emptyRecipe = {
+        name: 'Новый рецепт ' + (idx + 1),
+        maxCameraTemp: 80,
+        deltaCelsius: 18,
+        stages: []
+    };
+    for (var i = 0; i < 5; i++) {
+        emptyRecipe.stages.push({
+            active: false,
+            name: 'Этап ' + (i + 1),
+            targetCameraTemp: 0,
+            targetBatonTemp: 0,
+            durationHours: 0,
+            smokeOn: false,
+            waterOn: false,
+            coolMode: 0,
+            coolTargetTemp: 0,
+            coolTimeoutMin: 0,
+            requireHold: false,
+            holdMinutes: 0
+        });
+    }
+    recipes[idx] = emptyRecipe;
+    document.getElementById('recipeName').value = emptyRecipe.name;
+    document.getElementById('maxTemp').value = emptyRecipe.maxCameraTemp;
+    document.getElementById('delta').value = emptyRecipe.deltaCelsius;
+    renderStages(emptyRecipe.stages);
+    loadRecipesList();
+    document.getElementById('recipeSelect').value = idx;
 }
 
 function renderStages(stages) {
@@ -597,18 +614,18 @@ function renderStages(stages) {
         var tr = document.createElement('tr');
         tr.className = s.active ? 'stage-active' : 'stage-inactive';
         tr.innerHTML = '<td><span class="stage-number">' + (i + 1) + '</span></td>' +
-            '<td><input type="text" class="stage-name" value="' + s.name + '" data-idx="' + i + '"></td>' +
+            '<td><input type="text" class="stage-name" value="' + (s.name || 'Этап ' + (i + 1)) + '" data-idx="' + i + '"></td>' +
             '<td><input type="checkbox" class="stage-active-chk" ' + (s.active ? 'checked' : '') + ' data-idx="' + i + '"></td>' +
-            '<td><input type="number" class="stage-cam" step="0.1" value="' + s.targetCameraTemp + '" data-idx="' + i + '"></td>' +
-            '<td><input type="number" class="stage-bat" step="0.1" value="' + s.targetBatonTemp + '" data-idx="' + i + '"></td>' +
-            '<td><input type="number" class="stage-dur" step="0.1" value="' + s.durationHours + '" data-idx="' + i + '"></td>' +
+            '<td><input type="number" class="stage-cam" step="0.1" value="' + (s.targetCameraTemp || 0) + '" data-idx="' + i + '"></td>' +
+            '<td><input type="number" class="stage-bat" step="0.1" value="' + (s.targetBatonTemp || 0) + '" data-idx="' + i + '"></td>' +
+            '<td><input type="number" class="stage-dur" step="0.1" value="' + (s.durationHours || 0) + '" data-idx="' + i + '"></td>' +
             '<td><select class="stage-smoke" data-idx="' + i + '"><option value="1" ' + (s.smokeOn ? 'selected' : '') + '>ДА</option><option value="0" ' + (!s.smokeOn ? 'selected' : '') + '>НЕТ</option></select></td>' +
             '<td><select class="stage-water" data-idx="' + i + '"><option value="1" ' + (s.waterOn ? 'selected' : '') + '>ДА</option><option value="0" ' + (!s.waterOn ? 'selected' : '') + '>НЕТ</option></select></td>' +
             '<td><select class="stage-cool" data-idx="' + i + '"><option value="0" ' + (s.coolMode == 0 ? 'selected' : '') + '>Нет</option><option value="1" ' + (s.coolMode == 1 ? 'selected' : '') + '>Непрер</option><option value="2" ' + (s.coolMode == 2 ? 'selected' : '') + '>Импульс</option><option value="3" ' + (s.coolMode == 3 ? 'selected' : '') + '>Имп+тайм</option></select></td>' +
-            '<td><input type="number" class="stage-cooltarget" step="0.1" value="' + s.coolTargetTemp + '" data-idx="' + i + '"></td>' +
-            '<td><input type="number" class="stage-cooltimeout" value="' + s.coolTimeoutMin + '" data-idx="' + i + '"></td>' +
+            '<td><input type="number" class="stage-cooltarget" step="0.1" value="' + (s.coolTargetTemp || 0) + '" data-idx="' + i + '"></td>' +
+            '<td><input type="number" class="stage-cooltimeout" value="' + (s.coolTimeoutMin || 0) + '" data-idx="' + i + '"></td>' +
             '<td><select class="stage-hold" data-idx="' + i + '"><option value="1" ' + (s.requireHold ? 'selected' : '') + '>ДА</option><option value="0" ' + (!s.requireHold ? 'selected' : '') + '>НЕТ</option></select></td>' +
-            '<td><input type="number" class="stage-holdmin" step="0.5" value="' + s.holdMinutes + '" data-idx="' + i + '"></td>' +
+            '<td><input type="number" class="stage-holdmin" step="0.5" value="' + (s.holdMinutes || 0) + '" data-idx="' + i + '"></td>' +
             '<td><button onclick="removeStage(' + i + ')" ' + (i < 2 ? 'disabled' : '') + '>✕</button></td>';
         tbody.appendChild(tr);
     });
@@ -650,24 +667,11 @@ function saveSettings() {
     if (mqttClient && mqttClient.connected) {
         mqttClient.publish(MQTT_TOPIC_COMMAND, 'save:' + jsonData);
         showToast('✅ Сохранение через MQTT...', 'success');
+        recipes[currentIdx] = data;
+        loadRecipesList();
+        document.getElementById('recipeSelect').value = currentIdx;
     } else {
-        // Fallback через HTTP
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', 'http://192.168.137.178/save', true);
-        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState == 4) {
-                if (xhr.status == 200) {
-                    showToast(xhr.responseText, 'success');
-                    recipes[currentIdx] = data;
-                    loadRecipesList();
-                    document.getElementById('recipeSelect').value = currentIdx;
-                } else {
-                    showToast('Ошибка: ' + xhr.status, 'error');
-                }
-            }
-        };
-        xhr.send('data=' + encodeURIComponent(jsonData));
+        showToast('❌ Нет подключения к MQTT!', 'error');
     }
 }
 
@@ -706,7 +710,7 @@ function removeStage(idx) {
 
 function addRecipe() {
     for (var i = 0; i < 10; i++) {
-        if (recipes[i] && recipes[i].name === 'Новый рецепт ' + (i + 1)) {
+        if (!recipes[i] || recipes[i].name === 'Новый рецепт ' + (i + 1)) {
             currentIdx = i;
             document.getElementById('recipeSelect').value = i;
             loadRecipe();
@@ -729,23 +733,15 @@ function deleteRecipe() {
     for (var i = 0; i < 5; i++) {
         data.stages.push({ active: false, name: 'Этап ' + (i + 1), targetCameraTemp: 0, targetBatonTemp: 0, durationHours: 0, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 });
     }
-    var jsonData = JSON.stringify(data);
     
     if (mqttClient && mqttClient.connected) {
-        mqttClient.publish(MQTT_TOPIC_COMMAND, 'delete:' + jsonData);
+        mqttClient.publish(MQTT_TOPIC_COMMAND, 'delete:' + JSON.stringify(data));
         showToast('✅ Удаление через MQTT...', 'success');
+        recipes[currentIdx] = data;
+        loadRecipe();
+        loadRecipesList();
     } else {
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', 'http://192.168.137.178/save', true);
-        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState == 4 && xhr.status == 200) {
-                loadRecipe();
-                loadRecipesList();
-                showToast('✅ Рецепт удалён', 'success');
-            }
-        };
-        xhr.send('data=' + encodeURIComponent(jsonData));
+        showToast('❌ Нет подключения к MQTT!', 'error');
     }
 }
 
@@ -760,7 +756,7 @@ function stopRecipe() {
 // ==================== ЗАПУСК ====================
 connectMQTT();
 loadRecipesList();
-loadRecipe();
+setTimeout(function() { loadRecipe(); }, 1000);
 
 setInterval(function() {
     if (mqttClient && mqttClient.connected) {
