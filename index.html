@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>Умная коптильня</title>
+    
+    <!-- Подключаем MQTT библиотеку -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     
     <style>
@@ -12,6 +14,7 @@
         .container{max-width:1200px;margin:0 auto;background:white;padding:15px;border-radius:12px;}
         h1{color:#2c3e50;font-size:24px;}
         
+        /* ===== КНОПКИ ===== */
         .btn{padding:8px 12px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;margin:4px;min-height:44px;min-width:44px;touch-action:manipulation;}
         .btn-save{background:#2196F3;color:white;}
         .btn-run{background:#4CAF50;color:white;}
@@ -20,6 +23,7 @@
         .btn-danger{background:#f44336;color:white;}
         .btn-small{padding:5px 10px;font-size:12px;min-height:34px;min-width:34px;}
         
+        /* ===== СТАТУС ГРИД ===== */
         .status-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin:10px 0;}
         .status-item{background:#f8f9fa;padding:8px 10px;border-radius:6px;border-left:4px solid #4CAF50;}
         .status-item .label{font-size:0.65em;color:#888;}
@@ -27,14 +31,7 @@
         .status-item.heater-on{border-left-color:#ff6b6b;}
         .status-item.heater-off{border-left-color:#555;}
         
-        .connection-status{display:flex;align-items:center;gap:8px;padding:6px 12px;background:#f0f0f0;border-radius:20px;font-size:12px;margin:5px 0;flex-wrap:wrap;}
-        .connection-status .dot{width:10px;height:10px;border-radius:50%;display:inline-block;transition:all 0.3s;}
-        .connection-status .dot.online{background:#4CAF50;animation:pulse 2s infinite;}
-        .connection-status .dot.offline{background:#f44336;}
-        @keyframes pulse{0%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(0.8);}100%{opacity:1;transform:scale(1);}}
-        .connection-status button{background:none;border:1px solid #ccc;border-radius:12px;padding:2px 8px;font-size:11px;cursor:pointer;touch-action:manipulation;min-height:28px;min-width:28px;}
-        .connection-status button:hover{background:#e0e0e0;}
-        
+        /* ===== ТАБЛИЦА ===== */
         .table-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:8px -5px;padding:0 5px;}
         .stage-table{min-width:650px;width:100%;border-collapse:collapse;font-size:11px;}
         .stage-table th{background:#2c3e50;color:white;padding:6px 3px;text-align:center;white-space:nowrap;}
@@ -45,6 +42,7 @@
         .stage-table select{padding:2px;border:1px solid #ddd;border-radius:3px;font-size:9px;}
         .stage-table input[type=checkbox]{width:14px;height:14px;cursor:pointer;}
         
+        /* ===== СТАТУСЫ ЭТАПОВ ===== */
         .stage-active{background:#e8f5e9;}
         .stage-inactive{opacity:0.4;}
         .stage-number{font-weight:bold;padding:2px 6px;border-radius:50%;display:inline-block;font-size:11px;}
@@ -53,6 +51,7 @@
         .stage-number.error{background:#f44336;color:white;}
         .stage-number.waiting{background:#999;color:white;}
         
+        /* ===== ДЫМОГЕНЕРАТОР ===== */
         .smoke-panel{background:#263238;color:white;padding:12px;border-radius:8px;margin:10px 0;}
         .smoke-panel h3{color:#ffd93d;margin:0 0 8px 0;font-size:16px;}
         .smoke-status{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
@@ -64,6 +63,7 @@
         .smoke-error{background:#c62828;}
         .smoke-wait{background:#f57c00;}
         
+        /* ===== СТАТУС БАР ===== */
         .stage-status-bar{display:flex;gap:6px;flex-wrap:wrap;margin:5px 0;align-items:center;}
         .stage-status-bar .dot{width:12px;height:12px;border-radius:50%;display:inline-block;border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,0.3);}
         .stage-status-bar .dot.active{background:#4CAF50;}
@@ -72,6 +72,7 @@
         .stage-status-bar .dot.waiting{background:#999;}
         .stage-status-bar .label{font-size:10px;color:#666;font-weight:bold;}
         
+        /* ===== ЛОГ ===== */
         .log-panel{background:#1a1a2e;color:#00ff88;padding:8px;border-radius:8px;max-height:120px;overflow-y:auto;font-size:11px;font-family:'Courier New',monospace;margin:10px 0;}
         .log-panel .log-entry{padding:2px 0;border-bottom:1px solid #333;}
         .log-panel .log-error{color:#ff6b6b;}
@@ -81,32 +82,39 @@
         .flex{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
         .mt-10{margin-top:10px;}
         
+        /* ===== TOAST ===== */
         .toast{position:fixed;bottom:20px;right:20px;padding:12px 20px;border-radius:8px;color:white;z-index:999;display:none;font-weight:600;font-size:13px;max-width:90%;}
         .toast-success{background:#4CAF50;}
         .toast-error{background:#f44336;}
         .toast-warning{background:#FF9800;}
         
+        /* ===== АДАПТИВ ===== */
         @media(max-width:768px){
             body{padding:5px;font-size:12px;}
             .container{padding:8px;}
             h1{font-size:18px;}
+            
             .status-grid{grid-template-columns:repeat(3,1fr);gap:4px;}
             .status-item{padding:4px 6px;}
             .status-item .value{font-size:13px;}
             .status-item .label{font-size:9px;}
+            
             .stage-table{min-width:550px;font-size:10px;}
             .stage-table th,.stage-table td{padding:3px 2px;}
             .stage-table input[type=number]{width:35px;font-size:9px;padding:1px;}
             .stage-table input[type=text]{width:45px;font-size:9px;padding:1px;}
             .stage-table select{font-size:8px;padding:1px;max-width:45px;}
+            
             .btn{padding:5px 8px;font-size:10px;min-height:34px;min-width:34px;margin:2px;}
             .btn-small{font-size:9px;padding:3px 6px;min-height:28px;min-width:28px;}
+            
             .smoke-status{grid-template-columns:repeat(2,1fr);gap:4px;}
             .smoke-status .item .state{font-size:1em;}
+            
             .log-panel{max-height:80px;font-size:10px;}
             .toast{font-size:11px;padding:8px 14px;bottom:10px;right:10px;left:10px;}
-            .connection-status{font-size:10px;padding:4px 8px;}
         }
+        
         @media(max-width:480px){
             .status-grid{grid-template-columns:repeat(2,1fr);gap:3px;}
             .stage-table{min-width:450px;font-size:9px;}
@@ -126,13 +134,7 @@
     <h1>🔥 Умная коптильня</h1>
     <div id="toast" class="toast"></div>
 
-    <div class="connection-status">
-        <span class="dot" id="connectionDot"></span>
-        <span id="connectionText">Подключение...</span>
-        <span id="connectionType">📶</span>
-        <button onclick="reconnectMQTT()">🔄</button>
-    </div>
-
+    <!-- ===== СТАТУС ===== -->
     <div class="status-grid">
         <div class="status-item"><div class="label">Статус</div><div class="value" id="statusText">Ожидание</div></div>
         <div class="status-item"><div class="label">Этап</div><div class="value" id="stageText">--</div></div>
@@ -143,6 +145,7 @@
         <div class="status-item" id="heaterStatus"><div class="label">ТЭН</div><div class="value" id="t_heater">⏸ Выкл</div></div>
     </div>
 
+    <!-- ===== ДЫМОГЕНЕРАТОР ===== -->
     <div class="smoke-panel">
         <h3>💨 Дымогенератор</h3>
         <div class="smoke-status">
@@ -153,6 +156,7 @@
         </div>
     </div>
 
+    <!-- ===== КНОПКИ ===== -->
     <div>
         <button class="btn btn-save" onclick="saveSettings()">💾 Сохранить</button>
         <button class="btn btn-run" onclick="runRecipe()" id="runBtn">▶ Запустить</button>
@@ -162,6 +166,7 @@
         <button class="btn btn-add btn-small" onclick="toggleSound()" id="soundBtn">🔊 Звук Вкл</button>
     </div>
 
+    <!-- ===== РЕЦЕПТ ===== -->
     <div class="flex">
         <label>Рецепт: <select id="recipeSelect" onchange="loadRecipe()"></select></label>
         <label>Название: <input type="text" id="recipeName"></label>
@@ -169,8 +174,10 @@
         <label>Дельта: <input type="number" id="delta" step="0.5" style="width:55px;"></label>
     </div>
 
+    <!-- ===== СТАТУС-БАР ЭТАПОВ ===== -->
     <div class="stage-status-bar" id="stageStatusBar"><span class="label">Статус этапов:</span></div>
 
+    <!-- ===== ТАБЛИЦА (С ГОРИЗОНТАЛЬНЫМ СКРОЛЛОМ) ===== -->
     <div class="table-wrapper">
         <table class="stage-table">
             <thead>
@@ -189,6 +196,7 @@
         <span style="color:#888;font-size:11px;">(всего 5 этапов)</span>
     </div>
 
+    <!-- ===== ЛОГ ===== -->
     <div class="log-panel" id="logPanel">
         <div style="color:#888;font-size:10px;">📋 Журнал событий</div>
         <div id="logContent"></div>
@@ -196,157 +204,17 @@
 </div>
 
 <script>
-// ==================== ПАРОЛЬ ====================
-const ACCESS_PASSWORD = "kopty2026";
+// ==================== НАСТРОЙКИ ====================
+const ESP32_IP = "192.168.137.178";
+const ESP32_URL = `http://${ESP32_IP}`;
 
-function checkPassword() {
-    const savedPassword = localStorage.getItem('smoker_password');
-    if (savedPassword === ACCESS_PASSWORD) {
-        return true;
-    }
-    
-    const entered = prompt('🔐 Введите пароль для доступа к коптильне:');
-    if (entered === ACCESS_PASSWORD) {
-        localStorage.setItem('smoker_password', entered);
-        return true;
-    } else {
-        document.body.innerHTML = `
-            <div style="text-align:center;margin-top:50px;padding:20px;">
-                <h1 style="color:red;">🔒 ДОСТУП ЗАПРЕЩЁН</h1>
-                <p style="color:#666;">Неверный пароль</p>
-                <button onclick="location.reload()" style="padding:10px 20px;margin-top:20px;border-radius:8px;border:none;background:#2196F3;color:white;font-size:16px;cursor:pointer;">
-                    Попробовать снова
-                </button>
-            </div>
-        `;
-        return false;
-    }
-}
-
-if (!checkPassword()) {
-    throw new Error('Access denied');
-}
-
-// ==================== MQTT НАСТРОЙКИ ====================
-// ПОДКЛЮЧАЕМСЯ НАПРЯМУЮ К ESP32 (ВСТРОЕННЫЙ БРОКЕР)
-// ВАЖНО! Используем ws:// (не wss://) для локального подключения
-// Если открываете через GitHub Pages, браузер может блокировать ws://
-// В этом случае используйте wss:// через прокси или ngrok
-const MQTT_BROKER = 'ws://192.168.137.178:1883';
-const MQTT_TOPIC_STATUS = 'smoker/status';
-const MQTT_TOPIC_COMMAND = 'smoker/command';
-
-let mqttClient = null;
+// ==================== СОСТОЯНИЕ ====================
 let currentIdx = 0;
 let recipes = [];
 let stageStatus = [];
 let audioCtx = null;
 let soundEnabled = true;
 let lastStatus = {};
-
-// ==================== ПОДКЛЮЧЕНИЕ К MQTT ====================
-function connectMQTT() {
-    try {
-        console.log('🔄 Подключение к MQTT (ESP32)...');
-        
-        mqttClient = mqtt.connect(MQTT_BROKER, {
-            reconnectPeriod: 3000,
-            connectTimeout: 10000,
-            keepalive: 30,
-            clean: true,
-        });
-        
-        mqttClient.on('connect', function() {
-            console.log('✅ MQTT подключено к ' + MQTT_BROKER);
-            updateConnectionStatus(true, 'MQTT');
-            
-            mqttClient.subscribe(MQTT_TOPIC_STATUS, function(err) {
-                if (!err) {
-                    console.log('✅ Подписка на ' + MQTT_TOPIC_STATUS + ' успешна');
-                }
-            });
-            
-            setTimeout(function() {
-                mqttClient.publish(MQTT_TOPIC_COMMAND, 'status');
-                console.log('📤 Запрос статуса отправлен');
-            }, 500);
-            
-            showToast('✅ MQTT подключён к ESP32!', 'success');
-            loadRecipe();
-        });
-        
-        mqttClient.on('message', function(topic, message) {
-            console.log('📥 Получено сообщение от ' + topic);
-            if (topic === MQTT_TOPIC_STATUS) {
-                try {
-                    const data = JSON.parse(message.toString());
-                    console.log('📊 Данные:', data);
-                    updateUI(data);
-                } catch(e) {
-                    console.log('❌ Ошибка парсинга:', e);
-                }
-            }
-        });
-        
-        mqttClient.on('error', function(err) {
-            console.log('❌ MQTT ошибка:', err);
-            updateConnectionStatus(false);
-        });
-        
-        mqttClient.on('close', function() {
-            console.log('⚠️ MQTT отключено');
-            updateConnectionStatus(false);
-            setTimeout(connectMQTT, 3000);
-        });
-        
-    } catch(e) {
-        console.log('❌ Ошибка подключения:', e);
-        updateConnectionStatus(false);
-        setTimeout(connectMQTT, 5000);
-    }
-}
-
-function reconnectMQTT() {
-    if (mqttClient) {
-        try {
-            mqttClient.end(true);
-        } catch(e) {}
-        mqttClient = null;
-    }
-    connectMQTT();
-    showToast('🔄 Переподключение...', 'warning');
-}
-
-function sendCommand(command) {
-    if (mqttClient && mqttClient.connected) {
-        console.log('📤 Отправка команды:', command);
-        mqttClient.publish(MQTT_TOPIC_COMMAND, command);
-        showToast('✅ Команда отправлена: ' + command, 'success');
-    } else {
-        console.log('❌ Нет соединения с ESP32');
-        showToast('❌ Нет соединения с ESP32', 'error');
-        reconnectMQTT();
-    }
-}
-
-// ==================== UI ОБНОВЛЕНИЕ ====================
-function updateConnectionStatus(isOnline, type) {
-    const dot = document.getElementById('connectionDot');
-    const text = document.getElementById('connectionText');
-    const typeEl = document.getElementById('connectionType');
-    
-    if (isOnline) {
-        dot.className = 'dot online';
-        text.textContent = 'ESP32 Онлайн';
-        text.style.color = '#4CAF50';
-        typeEl.textContent = '🔗 Прямое';
-    } else {
-        dot.className = 'dot offline';
-        text.textContent = 'ESP32 Офлайн';
-        text.style.color = '#f44336';
-        typeEl.textContent = '❌';
-    }
-}
 
 // ==================== ЗВУК ====================
 function initAudio() {
@@ -407,6 +275,7 @@ function toggleSound() {
     document.getElementById('soundBtn').textContent = soundEnabled ? '🔊 Звук Вкл' : '🔇 Звук Выкл';
 }
 
+// ==================== УВЕДОМЛЕНИЯ ====================
 function showToast(msg, type) {
     const t = document.getElementById('toast');
     t.textContent = msg;
@@ -415,10 +284,22 @@ function showToast(msg, type) {
     setTimeout(function() { t.style.display = 'none'; }, 4000);
 }
 
+// ==================== РАБОТА С ESP32 ====================
+function loadStatus() {
+    fetch(ESP32_URL + '/status')
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            updateUI(data);
+        })
+        .catch(function(err) {
+            console.log('ESP32 недоступен:', err);
+            document.getElementById('statusText').innerText = '❌ Офлайн';
+        });
+}
+
 // ==================== UI ====================
 function updateUI(data) {
     if (!data) return;
-    
     document.getElementById('statusText').innerText = data.status || 'Ожидание';
     document.getElementById('stageText').innerText = data.stage || '--';
     document.getElementById('t_cam').innerText = (data.cam || 0).toFixed(1) + '°C';
@@ -469,6 +350,37 @@ function updateUI(data) {
         else if (data.smoke.stateText === 'Работает') cls = 'smoke-on';
         else if (data.smoke.stateText && (data.smoke.stateText.includes('Розжиг') || data.smoke.stateText.includes('Пауза'))) cls = 'smoke-wait';
         document.getElementById('smokeState').className = 'state ' + cls;
+    }
+    
+    // Звук
+    if (data.hasError && !lastStatus._errorPlayed) {
+        lastStatus._errorPlayed = true;
+        playEmergencyStop();
+        showToast('⚠️ АВАРИЯ!', 'error');
+    }
+    if (data.status === 'Завершён' && !lastStatus._completePlayed) {
+        lastStatus._completePlayed = true;
+        playRecipeComplete();
+        showToast('🏁 Рецепт завершён!', 'success');
+    }
+    if (data.stage !== lastStatus._lastStage && data.status === 'Работает') {
+        lastStatus._lastStage = data.stage;
+        playStageComplete();
+    }
+    if (data.smoke && data.smoke.stateText === 'Ошибка' && data.smoke.stateText !== lastStatus._smokeState) {
+        lastStatus._smokeState = data.smoke.stateText;
+        playError();
+        showToast('❌ Ошибка дымогенератора!', 'error');
+    }
+    if (data.smoke && data.smoke.stateText === 'Работает' && data.smoke.stateText !== lastStatus._smokeState) {
+        lastStatus._smokeState = data.smoke.stateText;
+        playSuccess();
+        showToast('✅ Дымогенератор запущен!', 'success');
+    }
+    if (data.smoke && data.smoke.stateText === 'Пауза 3 мин' && data.smoke.stateText !== lastStatus._smokeState) {
+        lastStatus._smokeState = data.smoke.stateText;
+        playWarning();
+        showToast('⚠️ Повтор розжига через 3 минуты', 'warning');
     }
     
     if (data.log) {
@@ -538,47 +450,19 @@ function loadRecipesList() {
 function loadRecipe() {
     var idx = parseInt(document.getElementById('recipeSelect').value);
     currentIdx = idx;
-    
-    if (recipes && recipes.length > 0 && recipes[idx]) {
-        var recipe = recipes[idx];
-        document.getElementById('recipeName').value = recipe.name || 'Рецепт ' + (idx + 1);
-        document.getElementById('maxTemp').value = recipe.maxCameraTemp || 80;
-        document.getElementById('delta').value = recipe.deltaCelsius || 18;
-        renderStages(recipe.stages || []);
-        loadRecipesList();
-        document.getElementById('recipeSelect').value = idx;
-        return;
-    }
-    
-    var emptyRecipe = {
-        name: 'Новый рецепт ' + (idx + 1),
-        maxCameraTemp: 80,
-        deltaCelsius: 18,
-        stages: []
-    };
-    for (var i = 0; i < 5; i++) {
-        emptyRecipe.stages.push({
-            active: false,
-            name: 'Этап ' + (i + 1),
-            targetCameraTemp: 0,
-            targetBatonTemp: 0,
-            durationHours: 0,
-            smokeOn: false,
-            waterOn: false,
-            coolMode: 0,
-            coolTargetTemp: 0,
-            coolTimeoutMin: 0,
-            requireHold: false,
-            holdMinutes: 0
-        });
-    }
-    recipes[idx] = emptyRecipe;
-    document.getElementById('recipeName').value = emptyRecipe.name;
-    document.getElementById('maxTemp').value = emptyRecipe.maxCameraTemp;
-    document.getElementById('delta').value = emptyRecipe.deltaCelsius;
-    renderStages(emptyRecipe.stages);
-    loadRecipesList();
-    document.getElementById('recipeSelect').value = idx;
+    fetch(ESP32_URL + '/load?idx=' + idx)
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            recipes = data.recipes;
+            var recipe = recipes[idx];
+            document.getElementById('recipeName').value = recipe.name;
+            document.getElementById('maxTemp').value = recipe.maxCameraTemp;
+            document.getElementById('delta').value = recipe.deltaCelsius;
+            renderStages(recipe.stages);
+            loadRecipesList();
+            document.getElementById('recipeSelect').value = idx;
+        })
+        .catch(function(err) { showToast('Ошибка загрузки', 'error'); });
 }
 
 function renderStages(stages) {
@@ -589,18 +473,18 @@ function renderStages(stages) {
         var tr = document.createElement('tr');
         tr.className = s.active ? 'stage-active' : 'stage-inactive';
         tr.innerHTML = '<td><span class="stage-number">' + (i + 1) + '</span></td>' +
-            '<td><input type="text" class="stage-name" value="' + (s.name || 'Этап ' + (i + 1)) + '" data-idx="' + i + '"></td>' +
+            '<td><input type="text" class="stage-name" value="' + s.name + '" data-idx="' + i + '"></td>' +
             '<td><input type="checkbox" class="stage-active-chk" ' + (s.active ? 'checked' : '') + ' data-idx="' + i + '"></td>' +
-            '<td><input type="number" class="stage-cam" step="0.1" value="' + (s.targetCameraTemp || 0) + '" data-idx="' + i + '"></td>' +
-            '<td><input type="number" class="stage-bat" step="0.1" value="' + (s.targetBatonTemp || 0) + '" data-idx="' + i + '"></td>' +
-            '<td><input type="number" class="stage-dur" step="0.1" value="' + (s.durationHours || 0) + '" data-idx="' + i + '"></td>' +
+            '<td><input type="number" class="stage-cam" step="0.1" value="' + s.targetCameraTemp + '" data-idx="' + i + '"></td>' +
+            '<td><input type="number" class="stage-bat" step="0.1" value="' + s.targetBatonTemp + '" data-idx="' + i + '"></td>' +
+            '<td><input type="number" class="stage-dur" step="0.1" value="' + s.durationHours + '" data-idx="' + i + '"></td>' +
             '<td><select class="stage-smoke" data-idx="' + i + '"><option value="1" ' + (s.smokeOn ? 'selected' : '') + '>ДА</option><option value="0" ' + (!s.smokeOn ? 'selected' : '') + '>НЕТ</option></select></td>' +
             '<td><select class="stage-water" data-idx="' + i + '"><option value="1" ' + (s.waterOn ? 'selected' : '') + '>ДА</option><option value="0" ' + (!s.waterOn ? 'selected' : '') + '>НЕТ</option></select></td>' +
             '<td><select class="stage-cool" data-idx="' + i + '"><option value="0" ' + (s.coolMode == 0 ? 'selected' : '') + '>Нет</option><option value="1" ' + (s.coolMode == 1 ? 'selected' : '') + '>Непрер</option><option value="2" ' + (s.coolMode == 2 ? 'selected' : '') + '>Импульс</option><option value="3" ' + (s.coolMode == 3 ? 'selected' : '') + '>Имп+тайм</option></select></td>' +
-            '<td><input type="number" class="stage-cooltarget" step="0.1" value="' + (s.coolTargetTemp || 0) + '" data-idx="' + i + '"></td>' +
-            '<td><input type="number" class="stage-cooltimeout" value="' + (s.coolTimeoutMin || 0) + '" data-idx="' + i + '"></td>' +
+            '<td><input type="number" class="stage-cooltarget" step="0.1" value="' + s.coolTargetTemp + '" data-idx="' + i + '"></td>' +
+            '<td><input type="number" class="stage-cooltimeout" value="' + s.coolTimeoutMin + '" data-idx="' + i + '"></td>' +
             '<td><select class="stage-hold" data-idx="' + i + '"><option value="1" ' + (s.requireHold ? 'selected' : '') + '>ДА</option><option value="0" ' + (!s.requireHold ? 'selected' : '') + '>НЕТ</option></select></td>' +
-            '<td><input type="number" class="stage-holdmin" step="0.5" value="' + (s.holdMinutes || 0) + '" data-idx="' + i + '"></td>' +
+            '<td><input type="number" class="stage-holdmin" step="0.5" value="' + s.holdMinutes + '" data-idx="' + i + '"></td>' +
             '<td><button onclick="removeStage(' + i + ')" ' + (i < 2 ? 'disabled' : '') + '>✕</button></td>';
         tbody.appendChild(tr);
     });
@@ -638,17 +522,22 @@ function saveSettings() {
         stages: getStagesFromUI()
     };
     var jsonData = JSON.stringify(data);
-    
-    if (mqttClient && mqttClient.connected) {
-        mqttClient.publish(MQTT_TOPIC_COMMAND, 'save:' + jsonData);
-        showToast('✅ Сохранение через MQTT...', 'success');
-        recipes[currentIdx] = data;
-        loadRecipesList();
-        document.getElementById('recipeSelect').value = currentIdx;
-    } else {
-        showToast('❌ Нет подключения к ESP32!', 'error');
-        reconnectMQTT();
-    }
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', ESP32_URL + '/save', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState == 4) {
+            if (xhr.status == 200) {
+                showToast(xhr.responseText, 'success');
+                recipes[currentIdx] = data;
+                loadRecipesList();
+                document.getElementById('recipeSelect').value = currentIdx;
+            } else {
+                showToast('Ошибка: ' + xhr.status, 'error');
+            }
+        }
+    };
+    xhr.send('data=' + encodeURIComponent(jsonData));
 }
 
 function addStage() {
@@ -686,7 +575,7 @@ function removeStage(idx) {
 
 function addRecipe() {
     for (var i = 0; i < 10; i++) {
-        if (!recipes[i] || recipes[i].name === 'Новый рецепт ' + (i + 1)) {
+        if (recipes[i] && recipes[i].name === 'Новый рецепт ' + (i + 1)) {
             currentIdx = i;
             document.getElementById('recipeSelect').value = i;
             loadRecipe();
@@ -709,37 +598,39 @@ function deleteRecipe() {
     for (var i = 0; i < 5; i++) {
         data.stages.push({ active: false, name: 'Этап ' + (i + 1), targetCameraTemp: 0, targetBatonTemp: 0, durationHours: 0, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 });
     }
-    
-    if (mqttClient && mqttClient.connected) {
-        mqttClient.publish(MQTT_TOPIC_COMMAND, 'delete:' + JSON.stringify(data));
-        showToast('✅ Удаление через MQTT...', 'success');
-        recipes[currentIdx] = data;
-        loadRecipe();
-        loadRecipesList();
-    } else {
-        showToast('❌ Нет подключения к ESP32!', 'error');
-        reconnectMQTT();
-    }
+    var jsonData = JSON.stringify(data);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', ESP32_URL + '/save', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState == 4 && xhr.status == 200) {
+            loadRecipe();
+            loadRecipesList();
+            showToast('✅ Рецепт удалён', 'success');
+        }
+    };
+    xhr.send('data=' + encodeURIComponent(jsonData));
 }
 
 function runRecipe() {
-    sendCommand('start');
+    document.getElementById('runBtn').style.display = 'none';
+    document.getElementById('stopBtn').style.display = 'inline-block';
+    fetch(ESP32_URL + '/run').catch(function() {});
 }
 
 function stopRecipe() {
-    sendCommand('stop');
+    document.getElementById('runBtn').style.display = 'inline-block';
+    document.getElementById('stopBtn').style.display = 'none';
+    fetch(ESP32_URL + '/stop').catch(function() {});
 }
 
 // ==================== ЗАПУСК ====================
-connectMQTT();
 loadRecipesList();
-setTimeout(function() { loadRecipe(); }, 1000);
+loadRecipe();
 
 setInterval(function() {
-    if (mqttClient && mqttClient.connected) {
-        mqttClient.publish(MQTT_TOPIC_COMMAND, 'status');
-    }
-}, 5000);
+    loadStatus();
+}, 2000);
 </script>
 </body>
 </html>
