@@ -228,8 +228,11 @@ if (!checkPassword()) {
 }
 
 // ==================== MQTT НАСТРОЙКИ ====================
-// ИСПОЛЬЗУЕМ Mosquitto - более стабильный в РФ
-const MQTT_BROKER = 'wss://test.mosquitto.org:8081';
+// ПОДКЛЮЧАЕМСЯ НАПРЯМУЮ К ESP32 (ВСТРОЕННЫЙ БРОКЕР)
+// ВАЖНО! Используем ws:// (не wss://) для локального подключения
+// Если открываете через GitHub Pages, браузер может блокировать ws://
+// В этом случае используйте wss:// через прокси или ngrok
+const MQTT_BROKER = 'ws://192.168.137.178:1883';
 const MQTT_TOPIC_STATUS = 'smoker/status';
 const MQTT_TOPIC_COMMAND = 'smoker/command';
 
@@ -244,11 +247,11 @@ let lastStatus = {};
 // ==================== ПОДКЛЮЧЕНИЕ К MQTT ====================
 function connectMQTT() {
     try {
-        console.log('🔄 Подключение к MQTT (Mosquitto)...');
+        console.log('🔄 Подключение к MQTT (ESP32)...');
         
         mqttClient = mqtt.connect(MQTT_BROKER, {
-            reconnectPeriod: 5000,
-            connectTimeout: 30000,
+            reconnectPeriod: 3000,
+            connectTimeout: 10000,
             keepalive: 30,
             clean: true,
         });
@@ -268,7 +271,7 @@ function connectMQTT() {
                 console.log('📤 Запрос статуса отправлен');
             }, 500);
             
-            showToast('✅ MQTT подключён!', 'success');
+            showToast('✅ MQTT подключён к ESP32!', 'success');
             loadRecipe();
         });
         
@@ -293,6 +296,7 @@ function connectMQTT() {
         mqttClient.on('close', function() {
             console.log('⚠️ MQTT отключено');
             updateConnectionStatus(false);
+            setTimeout(connectMQTT, 3000);
         });
         
     } catch(e) {
@@ -319,8 +323,8 @@ function sendCommand(command) {
         mqttClient.publish(MQTT_TOPIC_COMMAND, command);
         showToast('✅ Команда отправлена: ' + command, 'success');
     } else {
-        console.log('❌ Нет соединения');
-        showToast('❌ Нет соединения с MQTT', 'error');
+        console.log('❌ Нет соединения с ESP32');
+        showToast('❌ Нет соединения с ESP32', 'error');
         reconnectMQTT();
     }
 }
@@ -333,12 +337,12 @@ function updateConnectionStatus(isOnline, type) {
     
     if (isOnline) {
         dot.className = 'dot online';
-        text.textContent = 'MQTT Онлайн';
+        text.textContent = 'ESP32 Онлайн';
         text.style.color = '#4CAF50';
-        typeEl.textContent = '☁️ Облако';
+        typeEl.textContent = '🔗 Прямое';
     } else {
         dot.className = 'dot offline';
-        text.textContent = 'MQTT Офлайн';
+        text.textContent = 'ESP32 Офлайн';
         text.style.color = '#f44336';
         typeEl.textContent = '❌';
     }
@@ -642,7 +646,7 @@ function saveSettings() {
         loadRecipesList();
         document.getElementById('recipeSelect').value = currentIdx;
     } else {
-        showToast('❌ Нет подключения к MQTT!', 'error');
+        showToast('❌ Нет подключения к ESP32!', 'error');
         reconnectMQTT();
     }
 }
@@ -713,7 +717,7 @@ function deleteRecipe() {
         loadRecipe();
         loadRecipesList();
     } else {
-        showToast('❌ Нет подключения к MQTT!', 'error');
+        showToast('❌ Нет подключения к ESP32!', 'error');
         reconnectMQTT();
     }
 }
