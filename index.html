@@ -62,7 +62,7 @@
         .stage-status-bar .dot.waiting{background:#999;}
         .stage-status-bar .label{font-size:10px;color:#666;font-weight:bold;}
         
-        .log-panel{background:#1a1a2e;color:#00ff88;padding:8px;border-radius:8px;max-height:150px;overflow-y:auto;font-size:11px;font-family:'Courier New',monospace;margin:10px 0;}
+        .log-panel{background:#1a1a2e;color:#00ff88;padding:8px;border-radius:8px;max-height:200px;overflow-y:auto;font-size:11px;font-family:'Courier New',monospace;margin:10px 0;}
         .log-panel .log-entry{padding:2px 0;border-bottom:1px solid #333;white-space:pre-wrap;word-wrap:break-word;}
         .log-panel .log-error{color:#ff6b6b;}
         .log-panel .log-success{color:#69db7c;}
@@ -98,7 +98,7 @@
             .btn-small{font-size:9px;padding:3px 6px;min-height:28px;min-width:28px;}
             .smoke-status{grid-template-columns:repeat(2,1fr);gap:4px;}
             .smoke-status .item .state{font-size:1em;}
-            .log-panel{max-height:100px;font-size:10px;}
+            .log-panel{max-height:120px;font-size:10px;}
             .toast{font-size:11px;padding:8px 14px;bottom:10px;right:10px;left:10px;}
         }
         
@@ -203,8 +203,10 @@
 const mqttBroker = "wss://broker.emqx.io:8084/mqtt";
 const mqttOptions = {
     clientId: "web_" + Math.random().toString(16).substr(2, 8),
-    keepalive: 60,
-    reconnectPeriod: 3000
+    keepalive: 30,
+    reconnectPeriod: 3000,
+    connectTimeout: 10000,
+    clean: true
 };
 
 let mqttConnected = false;
@@ -215,6 +217,8 @@ let audioCtx = null;
 let soundEnabled = true;
 let lastStatus = {};
 const MAX_LOG_ENTRIES = 100;
+let isSending = false;
+let statusInterval = null;
 
 // ==================== MQTT ПОДКЛЮЧЕНИЕ ====================
 const client = mqtt.connect(mqttBroker, mqttOptions);
@@ -227,14 +231,27 @@ client.on('connect', function() {
     document.getElementById('mqttInfo').textContent = 'Данные поступают...';
     document.getElementById('espStatus').textContent = '🔍 ESP: онлайн';
     
+    // Подписываемся на все топики
     client.subscribe('koptilnya/status');
     client.subscribe('koptilnya/temp');
     client.subscribe('koptilnya/log');
     client.subscribe('koptilnya/save_ack');
+    console.log('📡 Подписка на топики выполнена');
     
+    // Запрашиваем статус один раз при подключении
     setTimeout(function() {
         client.publish('koptilnya/command', 'status');
-    }, 1000);
+    }, 500);
+    
+    // Запускаем интервал обновления статуса (РЕЖЕ!)
+    if (statusInterval) {
+        clearInterval(statusInterval);
+    }
+    statusInterval = setInterval(function() {
+        if (mqttConnected && !isSending) {
+            client.publish('koptilnya/command', 'status');
+        }
+    }, 5000); // Каждые 5 секунд вместо 2
 });
 
 client.on('offline', function() {
@@ -251,6 +268,11 @@ client.on('error', function(err) {
     mqttConnected = false;
     document.getElementById('mqttStatus').textContent = '❌ Ошибка';
     document.getElementById('mqttStatus').className = 'mqtt-status mqtt-off';
+});
+
+client.on('reconnect', function() {
+    console.log('🔄 Переподключение MQTT...');
+    document.getElementById('mqttInfo').textContent = 'Переподключение...';
 });
 
 client.on('message', function(topic, message) {
@@ -290,20 +312,39 @@ client.on('message', function(topic, message) {
     } else if (topic === 'koptilnya/save_ack') {
         showToast('✅ ' + msg, 'success');
         document.getElementById('espStatus').textContent = '🔍 ESP: сохранено ✓';
+        isSending = false;
         setTimeout(function() {
             document.getElementById('espStatus').textContent = '🔍 ESP: онлайн';
-        }, 3000);
+        }, 2000);
     }
 });
 
 // ==================== ОТПРАВКА КОМАНД ====================
 function sendMQTTCommand(cmd) {
-    if (mqttConnected) {
+    if (!mqttConnected) {
+        showToast('⚠️ MQTT не подключён', 'warning');
+        return false;
+    }
+    
+    if (isSending) {
+        showToast('⏳ Подождите, предыдущая команда выполняется...', 'warning');
+        return false;
+    }
+    
+    try {
+        isSending = true;
         client.publish('koptilnya/command', cmd);
         console.log('📤 MQTT команда:', cmd);
+        document.getElementById('espStatus').textContent = '🔍 ESP: команда отправлена';
+        setTimeout(function() {
+            isSending = false;
+            document.getElementById('espStatus').textContent = '🔍 ESP: онлайн';
+        }, 3000);
         return true;
-    } else {
-        showToast('⚠️ MQTT не подключён', 'warning');
+    } catch(e) {
+        console.error('Ошибка отправки:', e);
+        isSending = false;
+        showToast('❌ Ошибка отправки команды', 'error');
         return false;
     }
 }
@@ -461,12 +502,35 @@ function saveSettings() {
         stages: getStagesFromUI()
     };
     var jsonData = JSON.stringify(data);
-    if (mqttConnected) {
+    
+    if (!mqttConnected) {
+        showToast('⚠️ MQTT не подключён', 'warning');
+        return;
+    }
+    
+    if (isSending) {
+        showToast('⏳ Подождите, предыдущая команда выполняется...', 'warning');
+        return;
+    }
+    
+    try {
+        isSending = true;
         client.publish('koptilnya/save', jsonData);
         showToast('⏳ Отправка...', 'warning');
         document.getElementById('espStatus').textContent = '🔍 ESP: сохранение...';
-    } else {
-        showToast('⚠️ MQTT не подключён', 'warning');
+        console.log('📤 Сохранение:', jsonData);
+        
+        // Таймаут на случай, если не пришёл ответ
+        setTimeout(function() {
+            if (isSending) {
+                isSending = false;
+                document.getElementById('espStatus').textContent = '🔍 ESP: таймаут';
+                showToast('⚠️ Нет ответа от ESP', 'warning');
+            }
+        }, 10000);
+    } catch(e) {
+        isSending = false;
+        showToast('❌ Ошибка отправки', 'error');
     }
 }
 
@@ -529,9 +593,21 @@ function deleteRecipe() {
         data.stages.push({ active: false, name: 'Этап ' + (i + 1), targetCameraTemp: 0, targetBatonTemp: 0, durationHours: 0, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 });
     }
     var jsonData = JSON.stringify(data);
-    if (mqttConnected) {
-        client.publish('koptilnya/save', jsonData);
-        showToast('⏳ Удаление...', 'warning');
+    if (mqttConnected && !isSending) {
+        try {
+            isSending = true;
+            client.publish('koptilnya/save', jsonData);
+            showToast('⏳ Удаление...', 'warning');
+            setTimeout(function() {
+                if (isSending) {
+                    isSending = false;
+                    document.getElementById('espStatus').textContent = '🔍 ESP: онлайн';
+                }
+            }, 5000);
+        } catch(e) {
+            isSending = false;
+            showToast('❌ Ошибка', 'error');
+        }
     } else {
         showToast('⚠️ MQTT не подключён', 'warning');
     }
@@ -543,7 +619,7 @@ function runRecipe() {
         document.getElementById('runBtn').style.display = 'none';
         document.getElementById('stopBtn').style.display = 'inline-block';
     } else {
-        showToast('⚠️ MQTT не подключён', 'warning');
+        showToast('⚠️ MQTT не подключн', 'warning');
     }
 }
 
@@ -602,11 +678,13 @@ function initDemoRecipes() {
 // ==================== ЗАПУСК ====================
 initDemoRecipes();
 
-setInterval(function() {
-    if (mqttConnected) {
-        client.publish('koptilnya/command', 'status');
+// Закрываем соединение при выходе со страницы
+window.addEventListener('beforeunload', function() {
+    if (statusInterval) {
+        clearInterval(statusInterval);
     }
-}, 2000);
+    client.end();
+});
 </script>
 </body>
 </html>
