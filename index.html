@@ -17,6 +17,7 @@
         .btn-add{background:#FF9800;color:white;}
         .btn-danger{background:#f44336;color:white;}
         .btn-small{padding:5px 10px;font-size:12px;min-height:34px;min-width:34px;}
+        .btn-http{background:#9C27B0;color:white;}
         .status-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin:10px 0;}
         .status-item{background:#f8f9fa;padding:8px 10px;border-radius:6px;border-left:4px solid #4CAF50;}
         .status-item .label{font-size:0.65em;color:#888;}
@@ -70,6 +71,9 @@
         .mqtt-on{background:#4CAF50;color:white;}
         .mqtt-off{background:#f44336;color:white;}
         .mqtt-wait{background:#FF9800;color:white;}
+        .method-tabs{display:flex;gap:10px;margin:10px 0;flex-wrap:wrap;}
+        .method-tab{padding:8px 16px;border-radius:6px;cursor:pointer;border:2px solid #ddd;font-weight:bold;}
+        .method-tab.active{border-color:#2196F3;background:#e3f2fd;}
         @media(max-width:768px){
             body{padding:5px;font-size:12px;}
             .container{padding:8px;}
@@ -109,12 +113,19 @@
     <h1>🔥 Умная коптильня</h1>
     <div id="toast" class="toast"></div>
     
+    <!-- Выбор метода связи -->
+    <div class="method-tabs">
+        <div class="method-tab active" onclick="setMethod('mqtt')" id="tabMqtt">📡 MQTT</div>
+        <div class="method-tab" onclick="setMethod('http')" id="tabHttp">🌐 HTTP</div>
+    </div>
+    
     <!-- MQTT Статус -->
     <div style="margin-bottom:10px;">
         <span style="font-size:12px;color:#888;">📡 MQTT: </span>
         <span id="mqttStatus" class="mqtt-status mqtt-wait">Подключение...</span>
         <span style="font-size:11px;color:#888;margin-left:10px;" id="mqttInfo">Ожидание...</span>
         <span style="font-size:11px;color:#888;margin-left:10px;" id="espStatus">🔍 ESP: ...</span>
+        <span style="font-size:11px;color:#888;margin-left:10px;" id="methodStatus">📡 MQTT</span>
     </div>
 
     <!-- Статус -->
@@ -147,6 +158,7 @@
         <button class="btn btn-add" onclick="addRecipe()">➕ Новый</button>
         <button class="btn btn-danger" onclick="deleteRecipe()">🗑 Удалить</button>
         <button class="btn btn-add btn-small" onclick="toggleSound()" id="soundBtn">🔊 Звук Вкл</button>
+        <button class="btn btn-http btn-small" onclick="testConnection()">🔍 Тест ESP</button>
     </div>
 
     <!-- Рецепт -->
@@ -188,6 +200,7 @@
 
 <script>
 // ==================== НАСТРОЙКИ ====================
+const ESP_IP = "192.168.137.178"; // IP вашей ESP
 const mqttBroker = "wss://broker.emqx.io:8084/mqtt";
 const mqttOptions = {
     clientId: "web_" + Math.random().toString(16).substr(2, 8),
@@ -206,6 +219,7 @@ let lastStatus = {};
 const MAX_LOG_ENTRIES = 100;
 let isSending = false;
 let statusInterval = null;
+let method = 'mqtt'; // 'mqtt' или 'http'
 
 // ==================== MQTT ====================
 const client = mqtt.connect(mqttBroker, mqttOptions);
@@ -266,6 +280,10 @@ client.on('message', function(topic, message) {
     if (topic === 'koptilnya/status') {
         if (document.getElementById('statusText')) {
             document.getElementById('statusText').innerText = msg;
+            if (msg === 'Завершён') {
+                document.getElementById('runBtn').style.display = 'inline-block';
+                document.getElementById('stopBtn').style.display = 'none';
+            }
         }
     } else if (topic === 'koptilnya/temp') {
         try {
@@ -277,22 +295,7 @@ client.on('message', function(topic, message) {
             }
         } catch(e) {}
     } else if (topic === 'koptilnya/log') {
-        var logDiv = document.getElementById('logContent');
-        if (logDiv) {
-            var entry = document.createElement('div');
-            var cls = '';
-            if (msg.includes('❌') || msg.includes('ОШИБКА') || msg.includes('АВАРИЙНАЯ')) cls = 'log-error';
-            else if (msg.includes('✅')) cls = 'log-success';
-            else if (msg.includes('⚠️')) cls = 'log-warn';
-            entry.className = 'log-entry ' + cls;
-            entry.textContent = msg;
-            logDiv.appendChild(entry);
-            while (logDiv.children.length > MAX_LOG_ENTRIES) {
-                logDiv.removeChild(logDiv.firstChild);
-            }
-            var panel = document.getElementById('logPanel');
-            if (panel) panel.scrollTop = panel.scrollHeight;
-        }
+        addLogMessage(msg);
     } else if (topic === 'koptilnya/save_ack') {
         showToast('✅ ' + msg, 'success');
         document.getElementById('espStatus').textContent = '🔍 ESP: сохранено ✓';
@@ -303,40 +306,124 @@ client.on('message', function(topic, message) {
     }
 });
 
-// ==================== ОТПРАВКА КОМАНД ====================
-function sendMQTTCommand(cmd) {
-    if (!mqttConnected) {
-        showToast('⚠️ MQTT не подключён', 'warning');
-        return false;
-    }
+// ==================== HTTP API ====================
+async function httpRequest(endpoint, method = 'GET', data = null) {
+    const url = `http://${ESP_IP}${endpoint}`;
+    const options = {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    };
     
-    if (isSending) {
-        showToast('⏳ Подождите, предыдущая команда выполняется...', 'warning');
-        return false;
+    if (data) {
+        options.body = JSON.stringify(data);
     }
     
     try {
-        isSending = true;
-        client.publish('koptilnya/command', cmd);
-        console.log('📤 MQTT команда:', cmd);
-        document.getElementById('espStatus').textContent = '🔍 ESP: команда отправлена';
-        
-        // Если команда start/stop, снимаем блокировку через 2 секунды
-        setTimeout(function() {
-            isSending = false;
-            document.getElementById('espStatus').textContent = '🔍 ESP: онлайн';
-        }, 3000);
-        return true;
+        console.log(`📤 HTTP ${method} ${url}`);
+        const response = await fetch(url, options);
+        const text = await response.text();
+        console.log(`📥 HTTP ответ:`, text);
+        return { success: true, data: text };
     } catch(e) {
-        console.error('Ошибка отправки:', e);
-        isSending = false;
-        showToast('❌ Ошибка отправки команды', 'error');
-        return false;
+        console.error(`❌ HTTP ошибка:`, e);
+        return { success: false, error: e.message };
+    }
+}
+
+async function testConnection() {
+    showToast('⏳ Проверка связи...', 'warning');
+    const result = await httpRequest('/status');
+    if (result.success) {
+        showToast('✅ ESP доступна!', 'success');
+        document.getElementById('espStatus').textContent = '🔍 ESP: онлайн';
+        // Обновляем статус через HTTP
+        updateStatusFromHTTP();
+    } else {
+        showToast('❌ ESP не отвечает!', 'error');
+        document.getElementById('espStatus').textContent = '🔍 ESP: офлайн';
+    }
+}
+
+async function updateStatusFromHTTP() {
+    const result = await httpRequest('/status');
+    if (result.success) {
+        try {
+            const data = JSON.parse(result.data);
+            document.getElementById('statusText').innerText = data.status || 'Ожидание';
+            document.getElementById('stageText').innerText = data.stage || '--';
+            document.getElementById('t_cam').innerText = data.cam + '°C';
+            document.getElementById('t_bat').innerText = data.bat + '°C';
+            document.getElementById('t_smk').innerText = data.smk + '°C';
+            document.getElementById('t_heater').innerText = data.heater ? '🔥 Вкл' : '⏸ Выкл';
+            
+            if (data.log) {
+                const lines = data.log.split('\n');
+                lines.forEach(line => {
+                    if (line.trim()) addLogMessage(line);
+                });
+            }
+        } catch(e) {
+            console.error('Ошибка парсинга HTTP ответа:', e);
+        }
+    }
+}
+
+// ==================== ОТПРАВКА КОМАНД ====================
+async function sendCommand(cmd) {
+    console.log(`🔴 ОТПРАВКА КОМАНДЫ: ${cmd} (метод: ${method})`);
+    
+    if (method === 'http') {
+        const result = await httpRequest(`/api/command?cmd=${encodeURIComponent(cmd)}`, 'GET');
+        if (result.success) {
+            showToast(`✅ Команда "${cmd}" отправлена`, 'success');
+            document.getElementById('espStatus').textContent = '🔍 ESP: команда отправлена';
+            setTimeout(() => {
+                document.getElementById('espStatus').textContent = '🔍 ESP: онлайн';
+            }, 2000);
+            return true;
+        } else {
+            showToast(`❌ Ошибка: ${result.error}`, 'error');
+            return false;
+        }
+    } else {
+        // MQTT
+        if (!mqttConnected) {
+            showToast('⚠️ MQTT не подключён', 'warning');
+            return false;
+        }
+        
+        if (isSending) {
+            showToast('⏳ Подождите...', 'warning');
+            return false;
+        }
+        
+        try {
+            isSending = true;
+            client.publish('koptilnya/command', cmd);
+            console.log(`✅ Команда "${cmd}" отправлена в MQTT`);
+            showToast(`✅ Команда "${cmd}" отправлена`, 'success');
+            document.getElementById('espStatus').textContent = '🔍 ESP: команда отправлена';
+            
+            setTimeout(function() {
+                isSending = false;
+                document.getElementById('espStatus').textContent = '🔍 ESP: онлайн';
+            }, 2000);
+            return true;
+        } catch(e) {
+            console.error('❌ Ошибка отправки:', e);
+            isSending = false;
+            showToast(`❌ Ошибка: ${e.message}`, 'error');
+            return false;
+        }
     }
 }
 
 // ==================== СОХРАНЕНИЕ ====================
-function saveSettings() {
+async function saveSettings() {
+    console.log('💾 СОХРАНЕНИЕ РЕЦЕПТА');
+    
     var data = {
         idx: currentIdx,
         name: document.getElementById('recipeName').value || 'Рецепт ' + (currentIdx + 1),
@@ -344,24 +431,42 @@ function saveSettings() {
         deltaCelsius: parseFloat(document.getElementById('delta').value) || 18,
         stages: getStagesFromUI()
     };
-    var jsonData = JSON.stringify(data);
     
+    var jsonData = JSON.stringify(data);
+    console.log('📤 Данные для сохранения:', jsonData);
+    
+    if (method === 'http') {
+        // HTTP сохранение
+        const result = await httpRequest('/api/save', 'POST', { data: jsonData });
+        if (result.success) {
+            showToast('✅ Рецепт сохранён!', 'success');
+            document.getElementById('espStatus').textContent = '🔍 ESP: сохранено ✓';
+            setTimeout(() => {
+                document.getElementById('espStatus').textContent = '🔍 ESP: онлайн';
+            }, 2000);
+        } else {
+            showToast(`❌ Ошибка: ${result.error}`, 'error');
+        }
+        return;
+    }
+    
+    // MQTT сохранение
     if (!mqttConnected) {
         showToast('⚠️ MQTT не подключён', 'warning');
         return;
     }
     
     if (isSending) {
-        showToast('⏳ Подождите, предыдущая команда выполняется...', 'warning');
+        showToast('⏳ Подождите...', 'warning');
         return;
     }
     
     try {
         isSending = true;
         client.publish('koptilnya/save', jsonData);
-        showToast('⏳ Отправка...', 'warning');
+        console.log('✅ ДАННЫЕ ОТПРАВЛЕНЫ В MQTT!');
+        showToast('⏳ Сохранение...', 'warning');
         document.getElementById('espStatus').textContent = '🔍 ESP: сохранение...';
-        console.log('📤 Сохранение:', jsonData);
         
         setTimeout(function() {
             if (isSending) {
@@ -371,12 +476,49 @@ function saveSettings() {
             }
         }, 10000);
     } catch(e) {
+        console.error('❌ Ошибка отправки:', e);
         isSending = false;
-        showToast('❌ Ошибка отправки', 'error');
+        showToast(`❌ Ошибка: ${e.message}`, 'error');
     }
 }
 
 // ==================== ОСТАЛЬНЫЕ ФУНКЦИИ ====================
+function setMethod(m) {
+    method = m;
+    document.querySelectorAll('.method-tab').forEach(tab => tab.classList.remove('active'));
+    if (m === 'mqtt') {
+        document.getElementById('tabMqtt').classList.add('active');
+        document.getElementById('methodStatus').textContent = '📡 MQTT';
+        document.getElementById('mqttStatus').style.display = 'inline-block';
+        document.getElementById('mqttInfo').style.display = 'inline-block';
+    } else {
+        document.getElementById('tabHttp').classList.add('active');
+        document.getElementById('methodStatus').textContent = '🌐 HTTP';
+        document.getElementById('mqttStatus').style.display = 'none';
+        document.getElementById('mqttInfo').style.display = 'none';
+        // Тестируем HTTP соединение
+        testConnection();
+    }
+}
+
+function addLogMessage(msg) {
+    var logDiv = document.getElementById('logContent');
+    if (!logDiv) return;
+    var entry = document.createElement('div');
+    var cls = '';
+    if (msg.includes('❌') || msg.includes('ОШИБКА') || msg.includes('АВАРИЙНАЯ')) cls = 'log-error';
+    else if (msg.includes('✅')) cls = 'log-success';
+    else if (msg.includes('⚠️')) cls = 'log-warn';
+    entry.className = 'log-entry ' + cls;
+    entry.textContent = msg;
+    logDiv.appendChild(entry);
+    while (logDiv.children.length > MAX_LOG_ENTRIES) {
+        logDiv.removeChild(logDiv.firstChild);
+    }
+    var panel = document.getElementById('logPanel');
+    if (panel) panel.scrollTop = panel.scrollHeight;
+}
+
 function initAudio() {
     if (!audioCtx) {
         try { audioCtx = new(window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
@@ -398,36 +540,6 @@ function playBeep(freq, dur, vol) {
         osc.start();
         setTimeout(function() { osc.stop(); }, dur);
     } catch(e) {}
-}
-
-function playSuccess() {
-    playBeep(2000, 150);
-    setTimeout(function() { playBeep(2000, 150); }, 250);
-    setTimeout(function() { playBeep(2000, 150); }, 500);
-}
-
-function playError() {
-    for (var i = 0; i < 5; i++) {
-        setTimeout(function(i) { return function() { playBeep(1000, 400); }; }(i), i * 600);
-    }
-}
-
-function playWarning() {
-    playBeep(1500, 150);
-    setTimeout(function() { playBeep(1500, 150); }, 300);
-}
-
-function playStageComplete() { playBeep(2000, 400); }
-function playRecipeComplete() {
-    playBeep(523, 200);
-    setTimeout(function() { playBeep(659, 200); }, 250);
-    setTimeout(function() { playBeep(784, 200); }, 500);
-    setTimeout(function() { playBeep(1047, 400); }, 750);
-}
-function playEmergencyStop() {
-    for (var i = 0; i < 10; i++) {
-        setTimeout(function(i) { return function() { playBeep(800, 100); }; }(i), i * 200);
-    }
 }
 
 function toggleSound() {
@@ -576,44 +688,51 @@ function deleteRecipe() {
     for (var i = 0; i < 5; i++) {
         data.stages.push({ active: false, name: 'Этап ' + (i + 1), targetCameraTemp: 0, targetBatonTemp: 0, durationHours: 0, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 });
     }
+    
+    // Используем ту же логику сохранения для удаления
     var jsonData = JSON.stringify(data);
-    if (mqttConnected && !isSending) {
-        try {
-            isSending = true;
-            client.publish('koptilnya/save', jsonData);
-            showToast('⏳ Удаление...', 'warning');
-            setTimeout(function() {
-                if (isSending) {
-                    isSending = false;
-                    document.getElementById('espStatus').textContent = '🔍 ESP: онлайн';
-                }
-            }, 5000);
-        } catch(e) {
-            isSending = false;
-            showToast('❌ Ошибка', 'error');
-        }
+    if (method === 'http') {
+        httpRequest('/api/save', 'POST', { data: jsonData }).then(result => {
+            if (result.success) showToast('✅ Рецепт удалён', 'success');
+            else showToast('❌ Ошибка удаления', 'error');
+        });
     } else {
-        showToast('⚠️ MQTT не подключён', 'warning');
+        if (mqttConnected && !isSending) {
+            try {
+                isSending = true;
+                client.publish('koptilnya/save', jsonData);
+                showToast('⏳ Удаление...', 'warning');
+                setTimeout(function() {
+                    if (isSending) {
+                        isSending = false;
+                        document.getElementById('espStatus').textContent = '🔍 ESP: онлайн';
+                    }
+                }, 5000);
+            } catch(e) {
+                isSending = false;
+                showToast('❌ Ошибка', 'error');
+            }
+        } else {
+            showToast('⚠️ MQTT не подключён', 'warning');
+        }
     }
 }
 
-function runRecipe() {
-    if (mqttConnected) {
-        sendMQTTCommand('start');
+async function runRecipe() {
+    console.log('▶️ ЗАПУСК РЕЦЕПТА');
+    const sent = await sendCommand('start');
+    if (sent) {
         document.getElementById('runBtn').style.display = 'none';
         document.getElementById('stopBtn').style.display = 'inline-block';
-    } else {
-        showToast('⚠️ MQTT не подключён', 'warning');
     }
 }
 
-function stopRecipe() {
-    if (mqttConnected) {
-        sendMQTTCommand('stop');
+async function stopRecipe() {
+    console.log('⏹ ОСТАНОВКА РЕЦЕПТА');
+    const sent = await sendCommand('stop');
+    if (sent) {
         document.getElementById('runBtn').style.display = 'inline-block';
         document.getElementById('stopBtn').style.display = 'none';
-    } else {
-        showToast('⚠️ MQTT не подключён', 'warning');
     }
 }
 
