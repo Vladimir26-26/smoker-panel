@@ -4,11 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>Умная коптильня</title>
+    
+    <!-- Подключаем MQTT библиотеку -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    
     <style>
         *{box-sizing:border-box;}
         body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;margin:0;padding:10px;font-size:14px;}
         .container{max-width:1200px;margin:0 auto;background:white;padding:15px;border-radius:12px;}
         h1{color:#2c3e50;font-size:24px;}
+        
+        /* ===== КНОПКИ ===== */
         .btn{padding:8px 12px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;margin:4px;min-height:44px;min-width:44px;touch-action:manipulation;}
         .btn-save{background:#2196F3;color:white;}
         .btn-run{background:#4CAF50;color:white;}
@@ -16,21 +22,27 @@
         .btn-add{background:#FF9800;color:white;}
         .btn-danger{background:#f44336;color:white;}
         .btn-small{padding:5px 10px;font-size:12px;min-height:34px;min-width:34px;}
-        .btn-http{background:#9C27B0;color:white;}
+        
+        /* ===== СТАТУС ГРИД ===== */
         .status-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin:10px 0;}
         .status-item{background:#f8f9fa;padding:8px 10px;border-radius:6px;border-left:4px solid #4CAF50;}
         .status-item .label{font-size:0.65em;color:#888;}
         .status-item .value{font-size:1em;font-weight:bold;}
         .status-item.heater-on{border-left-color:#ff6b6b;}
         .status-item.heater-off{border-left-color:#555;}
+        
+        /* ===== ТАБЛИЦА ===== */
         .table-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:8px -5px;padding:0 5px;}
         .stage-table{min-width:650px;width:100%;border-collapse:collapse;font-size:11px;}
         .stage-table th{background:#2c3e50;color:white;padding:6px 3px;text-align:center;white-space:nowrap;}
         .stage-table td{border:1px solid #ddd;padding:4px 2px;text-align:center;vertical-align:middle;}
+        .stage-table tr:nth-child(even){background:#f8f9fa;}
         .stage-table input[type=number]{width:45px;padding:2px;border:1px solid #ddd;border-radius:3px;font-size:10px;text-align:center;}
         .stage-table input[type=text]{width:60px;padding:2px;border:1px solid #ddd;border-radius:3px;font-size:10px;text-align:center;}
         .stage-table select{padding:2px;border:1px solid #ddd;border-radius:3px;font-size:9px;}
         .stage-table input[type=checkbox]{width:14px;height:14px;cursor:pointer;}
+        
+        /* ===== СТАТУСЫ ЭТАПОВ ===== */
         .stage-active{background:#e8f5e9;}
         .stage-inactive{opacity:0.4;}
         .stage-number{font-weight:bold;padding:2px 6px;border-radius:50%;display:inline-block;font-size:11px;}
@@ -38,6 +50,8 @@
         .stage-number.done{background:#2196F3;color:white;}
         .stage-number.error{background:#f44336;color:white;}
         .stage-number.waiting{background:#999;color:white;}
+        
+        /* ===== ДЫМОГЕНЕРАТОР ===== */
         .smoke-panel{background:#263238;color:white;padding:12px;border-radius:8px;margin:10px 0;}
         .smoke-panel h3{color:#ffd93d;margin:0 0 8px 0;font-size:16px;}
         .smoke-status{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
@@ -48,6 +62,8 @@
         .smoke-off{background:#555;}
         .smoke-error{background:#c62828;}
         .smoke-wait{background:#f57c00;}
+        
+        /* ===== СТАТУС БАР ===== */
         .stage-status-bar{display:flex;gap:6px;flex-wrap:wrap;margin:5px 0;align-items:center;}
         .stage-status-bar .dot{width:12px;height:12px;border-radius:50%;display:inline-block;border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,0.3);}
         .stage-status-bar .dot.active{background:#4CAF50;}
@@ -55,40 +71,50 @@
         .stage-status-bar .dot.error{background:#f44336;}
         .stage-status-bar .dot.waiting{background:#999;}
         .stage-status-bar .label{font-size:10px;color:#666;font-weight:bold;}
-        .log-panel{background:#1a1a2e;color:#00ff88;padding:8px;border-radius:8px;max-height:200px;overflow-y:auto;font-size:11px;font-family:'Courier New',monospace;margin:10px 0;}
-        .log-panel .log-entry{padding:2px 0;border-bottom:1px solid #333;white-space:pre-wrap;word-wrap:break-word;}
+        
+        /* ===== ЛОГ ===== */
+        .log-panel{background:#1a1a2e;color:#00ff88;padding:8px;border-radius:8px;max-height:120px;overflow-y:auto;font-size:11px;font-family:'Courier New',monospace;margin:10px 0;}
+        .log-panel .log-entry{padding:2px 0;border-bottom:1px solid #333;}
         .log-panel .log-error{color:#ff6b6b;}
         .log-panel .log-success{color:#69db7c;}
         .log-panel .log-warn{color:#ffd93d;}
+        
         .flex{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
         .mt-10{margin-top:10px;}
+        
+        /* ===== TOAST ===== */
         .toast{position:fixed;bottom:20px;right:20px;padding:12px 20px;border-radius:8px;color:white;z-index:999;display:none;font-weight:600;font-size:13px;max-width:90%;}
         .toast-success{background:#4CAF50;}
         .toast-error{background:#f44336;}
         .toast-warning{background:#FF9800;}
-        .esp-ip-input{display:flex;gap:8px;align-items:center;margin:10px 0;}
-        .esp-ip-input input{padding:6px 10px;border:1px solid #ddd;border-radius:4px;font-size:14px;width:180px;}
+        
+        /* ===== АДАПТИВ ===== */
         @media(max-width:768px){
             body{padding:5px;font-size:12px;}
             .container{padding:8px;}
             h1{font-size:18px;}
+            
             .status-grid{grid-template-columns:repeat(3,1fr);gap:4px;}
             .status-item{padding:4px 6px;}
             .status-item .value{font-size:13px;}
             .status-item .label{font-size:9px;}
+            
             .stage-table{min-width:550px;font-size:10px;}
             .stage-table th,.stage-table td{padding:3px 2px;}
             .stage-table input[type=number]{width:35px;font-size:9px;padding:1px;}
             .stage-table input[type=text]{width:45px;font-size:9px;padding:1px;}
             .stage-table select{font-size:8px;padding:1px;max-width:45px;}
+            
             .btn{padding:5px 8px;font-size:10px;min-height:34px;min-width:34px;margin:2px;}
             .btn-small{font-size:9px;padding:3px 6px;min-height:28px;min-width:28px;}
+            
             .smoke-status{grid-template-columns:repeat(2,1fr);gap:4px;}
             .smoke-status .item .state{font-size:1em;}
-            .log-panel{max-height:120px;font-size:10px;}
+            
+            .log-panel{max-height:80px;font-size:10px;}
             .toast{font-size:11px;padding:8px 14px;bottom:10px;right:10px;left:10px;}
-            .esp-ip-input input{width:120px;font-size:12px;}
         }
+        
         @media(max-width:480px){
             .status-grid{grid-template-columns:repeat(2,1fr);gap:3px;}
             .stage-table{min-width:450px;font-size:9px;}
@@ -107,23 +133,8 @@
 <div class="container">
     <h1>🔥 Умная коптильня</h1>
     <div id="toast" class="toast"></div>
-    
-    <!-- Настройка IP ESP -->
-    <div class="esp-ip-input">
-        <span style="font-weight:bold;">ESP IP:</span>
-        <input type="text" id="espIp" value="192.168.137.178" placeholder="Введите IP ESP">
-        <button class="btn btn-http btn-small" onclick="testConnection()">🔍 Тест связи</button>
-        <span id="connectionStatus" style="font-size:12px;color:#888;">⏳ Не проверено</span>
-    </div>
-    
-    <!-- Статус -->
-    <div style="margin-bottom:10px;">
-        <span style="font-size:12px;color:#888;">🌐 Режим: </span>
-        <span style="font-weight:bold;color:#9C27B0;">HTTP API</span>
-        <span style="font-size:11px;color:#888;margin-left:10px;" id="espStatus">🔍 ESP: ...</span>
-    </div>
 
-    <!-- Статус -->
+    <!-- ===== СТАТУС ===== -->
     <div class="status-grid">
         <div class="status-item"><div class="label">Статус</div><div class="value" id="statusText">Ожидание</div></div>
         <div class="status-item"><div class="label">Этап</div><div class="value" id="stageText">--</div></div>
@@ -134,7 +145,7 @@
         <div class="status-item" id="heaterStatus"><div class="label">ТЭН</div><div class="value" id="t_heater">⏸ Выкл</div></div>
     </div>
 
-    <!-- Дымогенератор -->
+    <!-- ===== ДЫМОГЕНЕРАТОР ===== -->
     <div class="smoke-panel">
         <h3>💨 Дымогенератор</h3>
         <div class="smoke-status">
@@ -145,7 +156,7 @@
         </div>
     </div>
 
-    <!-- Кнопки -->
+    <!-- ===== КНОПКИ ===== -->
     <div>
         <button class="btn btn-save" onclick="saveSettings()">💾 Сохранить</button>
         <button class="btn btn-run" onclick="runRecipe()" id="runBtn">▶ Запустить</button>
@@ -155,7 +166,7 @@
         <button class="btn btn-add btn-small" onclick="toggleSound()" id="soundBtn">🔊 Звук Вкл</button>
     </div>
 
-    <!-- Рецепт -->
+    <!-- ===== РЕЦЕПТ ===== -->
     <div class="flex">
         <label>Рецепт: <select id="recipeSelect" onchange="loadRecipe()"></select></label>
         <label>Название: <input type="text" id="recipeName"></label>
@@ -163,10 +174,10 @@
         <label>Дельта: <input type="number" id="delta" step="0.5" style="width:55px;"></label>
     </div>
 
-    <!-- Статус-бар этапов -->
+    <!-- ===== СТАТУС-БАР ЭТАПОВ ===== -->
     <div class="stage-status-bar" id="stageStatusBar"><span class="label">Статус этапов:</span></div>
 
-    <!-- Таблица -->
+    <!-- ===== ТАБЛИЦА (С ГОРИЗОНТАЛЬНЫМ СКРОЛЛОМ) ===== -->
     <div class="table-wrapper">
         <table class="stage-table">
             <thead>
@@ -185,7 +196,7 @@
         <span style="color:#888;font-size:11px;">(всего 5 этапов)</span>
     </div>
 
-    <!-- Лог -->
+    <!-- ===== ЛОГ ===== -->
     <div class="log-panel" id="logPanel">
         <div style="color:#888;font-size:10px;">📋 Журнал событий</div>
         <div id="logContent"></div>
@@ -194,220 +205,18 @@
 
 <script>
 // ==================== НАСТРОЙКИ ====================
-let ESP_IP = localStorage.getItem('espIp') || "192.168.137.178";
+const ESP32_IP = "192.168.137.178";
+const ESP32_URL = `http://${ESP32_IP}`;
+
+// ==================== СОСТОЯНИЕ ====================
 let currentIdx = 0;
 let recipes = [];
+let stageStatus = [];
 let audioCtx = null;
 let soundEnabled = true;
-const MAX_LOG_ENTRIES = 100;
-let isSending = false;
-let statusInterval = null;
+let lastStatus = {};
 
-// Загружаем IP из localStorage
-document.getElementById('espIp').value = ESP_IP;
-
-// ==================== HTTP API ====================
-async function httpRequest(endpoint, method = 'GET', data = null) {
-    const url = `http://${ESP_IP}${endpoint}`;
-    const options = {
-        method: method,
-        headers: {
-            'Content-Type': 'application/json',
-        }
-    };
-    
-    if (data) {
-        options.body = JSON.stringify(data);
-    }
-    
-    try {
-        console.log(`📤 HTTP ${method} ${url}`);
-        const response = await fetch(url, options);
-        const text = await response.text();
-        console.log(`📥 HTTP ответ (${response.status}):`, text);
-        return { success: response.status >= 200 && response.status < 300, data: text, status: response.status };
-    } catch(e) {
-        console.error(`❌ HTTP ошибка:`, e);
-        return { success: false, error: e.message };
-    }
-}
-
-async function testConnection() {
-    ESP_IP = document.getElementById('espIp').value.trim();
-    localStorage.setItem('espIp', ESP_IP);
-    
-    showToast('⏳ Проверка связи...', 'warning');
-    document.getElementById('connectionStatus').textContent = '⏳ Проверка...';
-    document.getElementById('connectionStatus').style.color = '#FF9800';
-    
-    const result = await httpRequest('/status');
-    if (result.success) {
-        try {
-            const data = JSON.parse(result.data);
-            showToast('✅ ESP доступна!', 'success');
-            document.getElementById('connectionStatus').textContent = '✅ Онлайн';
-            document.getElementById('connectionStatus').style.color = '#4CAF50';
-            document.getElementById('espStatus').textContent = '🔍 ESP: онлайн';
-            updateStatusFromHTTP();
-            return true;
-        } catch(e) {
-            showToast('❌ Ошибка парсинга ответа', 'error');
-            document.getElementById('connectionStatus').textContent = '❌ Ошибка';
-            document.getElementById('connectionStatus').style.color = '#f44336';
-            return false;
-        }
-    } else {
-        showToast('❌ ESP не отвечает! Проверьте IP', 'error');
-        document.getElementById('connectionStatus').textContent = '❌ Офлайн';
-        document.getElementById('connectionStatus').style.color = '#f44336';
-        document.getElementById('espStatus').textContent = '🔍 ESP: офлайн';
-        return false;
-    }
-}
-
-async function updateStatusFromHTTP() {
-    const result = await httpRequest('/status');
-    if (result.success) {
-        try {
-            const data = JSON.parse(result.data);
-            document.getElementById('statusText').innerText = data.status || 'Ожидание';
-            document.getElementById('stageText').innerText = data.stage || '--';
-            document.getElementById('t_cam').innerText = (data.cam || 0).toFixed(1) + '°C';
-            document.getElementById('t_bat').innerText = (data.bat || 0).toFixed(1) + '°C';
-            document.getElementById('t_smk').innerText = (data.smk || 0).toFixed(1) + '°C';
-            document.getElementById('t_heater').innerText = data.heater ? '🔥 Вкл' : '⏸ Выкл';
-            
-            // Обновляем статус кнопок
-            if (data.status === 'Работает') {
-                document.getElementById('runBtn').style.display = 'none';
-                document.getElementById('stopBtn').style.display = 'inline-block';
-            } else {
-                document.getElementById('runBtn').style.display = 'inline-block';
-                document.getElementById('stopBtn').style.display = 'none';
-            }
-            
-            // Обновляем дымогенератор
-            if (data.smoke) {
-                document.getElementById('smokeSolenoid').textContent = data.smoke.solenoid ? '🔥 Открыта' : '🔒 Закрыта';
-                document.getElementById('smokeFan').textContent = data.smoke.fan ? '🌀 Вкл' : '⏸ Выкл';
-                document.getElementById('smokeGlow').textContent = data.smoke.glow ? '🔥 Вкл' : '⏸ Выкл';
-                document.getElementById('smokeState').textContent = data.smoke.stateText || 'Ожидание';
-            }
-            
-            // Обновляем лог
-            if (data.log) {
-                const lines = data.log.split('\n');
-                lines.forEach(line => {
-                    if (line.trim()) addLogMessage(line);
-                });
-            }
-            
-            document.getElementById('espStatus').textContent = '🔍 ESP: онлайн';
-            return true;
-        } catch(e) {
-            console.error('Ошибка парсинга HTTP ответа:', e);
-            return false;
-        }
-    }
-    return false;
-}
-
-// ==================== ОТПРАВКА КОМАНД ====================
-async function sendCommand(cmd) {
-    console.log(`🔴 ОТПРАВКА КОМАНДЫ: ${cmd}`);
-    
-    if (isSending) {
-        showToast('⏳ Подождите, предыдущая команда выполняется...', 'warning');
-        return false;
-    }
-    
-    try {
-        isSending = true;
-        const result = await httpRequest(`/api/command?cmd=${encodeURIComponent(cmd)}`, 'GET');
-        isSending = false;
-        
-        if (result.success) {
-            showToast(`✅ Команда "${cmd}" отправлена`, 'success');
-            document.getElementById('espStatus').textContent = '🔍 ESP: команда отправлена';
-            setTimeout(() => {
-                document.getElementById('espStatus').textContent = '🔍 ESP: онлайн';
-            }, 2000);
-            
-            // Обновляем статус после команды
-            setTimeout(() => updateStatusFromHTTP(), 500);
-            return true;
-        } else {
-            showToast(`❌ Ошибка: ${result.error || 'Нет ответа'}`, 'error');
-            return false;
-        }
-    } catch(e) {
-        console.error('❌ Ошибка отправки:', e);
-        isSending = false;
-        showToast(`❌ Ошибка: ${e.message}`, 'error');
-        return false;
-    }
-}
-
-// ==================== СОХРАНЕНИЕ ====================
-async function saveSettings() {
-    console.log('💾 СОХРАНЕНИЕ РЕЦЕПТА');
-    
-    var data = {
-        idx: currentIdx,
-        name: document.getElementById('recipeName').value || 'Рецепт ' + (currentIdx + 1),
-        maxCameraTemp: parseFloat(document.getElementById('maxTemp').value) || 80,
-        deltaCelsius: parseFloat(document.getElementById('delta').value) || 18,
-        stages: getStagesFromUI()
-    };
-    
-    var jsonData = JSON.stringify(data);
-    console.log('📤 Данные для сохранения:', jsonData);
-    
-    if (isSending) {
-        showToast('⏳ Подождите...', 'warning');
-        return;
-    }
-    
-    try {
-        isSending = true;
-        const result = await httpRequest('/api/save', 'POST', { data: jsonData });
-        isSending = false;
-        
-        if (result.success) {
-            showToast('✅ Рецепт сохранён!', 'success');
-            document.getElementById('espStatus').textContent = '🔍 ESP: сохранено ✓';
-            setTimeout(() => {
-                document.getElementById('espStatus').textContent = '🔍 ESP: онлайн';
-            }, 2000);
-        } else {
-            showToast(`❌ Ошибка: ${result.error || 'Нет ответа'}`, 'error');
-        }
-    } catch(e) {
-        console.error('❌ Ошибка отправки:', e);
-        isSending = false;
-        showToast(`❌ Ошибка: ${e.message}`, 'error');
-    }
-}
-
-// ==================== ОСТАЛЬНЫЕ ФУНКЦИИ ====================
-function addLogMessage(msg) {
-    var logDiv = document.getElementById('logContent');
-    if (!logDiv) return;
-    var entry = document.createElement('div');
-    var cls = '';
-    if (msg.includes('❌') || msg.includes('ОШИБКА') || msg.includes('АВАРИЙНАЯ')) cls = 'log-error';
-    else if (msg.includes('✅')) cls = 'log-success';
-    else if (msg.includes('⚠️')) cls = 'log-warn';
-    entry.className = 'log-entry ' + cls;
-    entry.textContent = msg;
-    logDiv.appendChild(entry);
-    while (logDiv.children.length > MAX_LOG_ENTRIES) {
-        logDiv.removeChild(logDiv.firstChild);
-    }
-    var panel = document.getElementById('logPanel');
-    if (panel) panel.scrollTop = panel.scrollHeight;
-}
-
+// ==================== ЗВУК ====================
 function initAudio() {
     if (!audioCtx) {
         try { audioCtx = new(window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
@@ -431,11 +240,42 @@ function playBeep(freq, dur, vol) {
     } catch(e) {}
 }
 
+function playSuccess() {
+    playBeep(2000, 150);
+    setTimeout(function() { playBeep(2000, 150); }, 250);
+    setTimeout(function() { playBeep(2000, 150); }, 500);
+}
+
+function playError() {
+    for (var i = 0; i < 5; i++) {
+        setTimeout(function(i) { return function() { playBeep(1000, 400); }; }(i), i * 600);
+    }
+}
+
+function playWarning() {
+    playBeep(1500, 150);
+    setTimeout(function() { playBeep(1500, 150); }, 300);
+}
+
+function playStageComplete() { playBeep(2000, 400); }
+function playRecipeComplete() {
+    playBeep(523, 200);
+    setTimeout(function() { playBeep(659, 200); }, 250);
+    setTimeout(function() { playBeep(784, 200); }, 500);
+    setTimeout(function() { playBeep(1047, 400); }, 750);
+}
+function playEmergencyStop() {
+    for (var i = 0; i < 10; i++) {
+        setTimeout(function(i) { return function() { playBeep(800, 100); }; }(i), i * 200);
+    }
+}
+
 function toggleSound() {
     soundEnabled = !soundEnabled;
     document.getElementById('soundBtn').textContent = soundEnabled ? '🔊 Звук Вкл' : '🔇 Звук Выкл';
 }
 
+// ==================== УВЕДОМЛЕНИЯ ====================
 function showToast(msg, type) {
     const t = document.getElementById('toast');
     t.textContent = msg;
@@ -444,6 +284,157 @@ function showToast(msg, type) {
     setTimeout(function() { t.style.display = 'none'; }, 4000);
 }
 
+// ==================== РАБОТА С ESP32 ====================
+function loadStatus() {
+    fetch(ESP32_URL + '/status')
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            updateUI(data);
+        })
+        .catch(function(err) {
+            console.log('ESP32 недоступен:', err);
+            document.getElementById('statusText').innerText = '❌ Офлайн';
+        });
+}
+
+// ==================== UI ====================
+function updateUI(data) {
+    if (!data) return;
+    document.getElementById('statusText').innerText = data.status || 'Ожидание';
+    document.getElementById('stageText').innerText = data.stage || '--';
+    document.getElementById('t_cam').innerText = (data.cam || 0).toFixed(1) + '°C';
+    document.getElementById('t_bat').innerText = (data.bat || 0).toFixed(1) + '°C';
+    document.getElementById('t_smk').innerText = (data.smk || 0).toFixed(1) + '°C';
+    
+    var heaterEl = document.getElementById('t_heater');
+    var heaterStatus = document.getElementById('heaterStatus');
+    if (data.heater) {
+        heaterEl.innerHTML = '🔥 Вкл';
+        heaterStatus.className = 'status-item heater-on';
+    } else {
+        heaterEl.innerHTML = '⏸ Выкл';
+        heaterStatus.className = 'status-item heater-off';
+    }
+    
+    if (data.timeLeft >= 0) {
+        var h = Math.floor(data.timeLeft / 3600);
+        var m = Math.floor((data.timeLeft % 3600) / 60);
+        document.getElementById('timeLeft').innerText = h + 'ч ' + m + 'м';
+    } else {
+        document.getElementById('timeLeft').innerText = '--';
+    }
+    
+    if (data.status === 'Работает') {
+        document.getElementById('runBtn').style.display = 'none';
+        document.getElementById('stopBtn').style.display = 'inline-block';
+    } else {
+        document.getElementById('runBtn').style.display = 'inline-block';
+        document.getElementById('stopBtn').style.display = 'none';
+    }
+    
+    if (data.stageStatus) { 
+        stageStatus = data.stageStatus; 
+        updateStageColors(); 
+    }
+    
+    if (data.smoke) {
+        document.getElementById('smokeSolenoid').innerHTML = data.smoke.solenoid ? '🔓 Открыта' : '🔒 Закрыта';
+        document.getElementById('smokeSolenoid').className = 'state ' + (data.smoke.solenoid ? 'smoke-on' : 'smoke-off');
+        document.getElementById('smokeFan').innerHTML = data.smoke.fan ? '🌀 Вкл' : '⏸ Выкл';
+        document.getElementById('smokeFan').className = 'state ' + (data.smoke.fan ? 'smoke-on' : 'smoke-off');
+        document.getElementById('smokeGlow').innerHTML = data.smoke.glow ? '🔥 Вкл' : '⏸ Выкл';
+        document.getElementById('smokeGlow').className = 'state ' + (data.smoke.glow ? 'smoke-on' : 'smoke-off');
+        document.getElementById('smokeState').innerHTML = data.smoke.stateText || 'Ожидание';
+        var cls = 'smoke-off';
+        if (data.smoke.stateText === 'Ошибка') cls = 'smoke-error';
+        else if (data.smoke.stateText === 'Работает') cls = 'smoke-on';
+        else if (data.smoke.stateText && (data.smoke.stateText.includes('Розжиг') || data.smoke.stateText.includes('Пауза'))) cls = 'smoke-wait';
+        document.getElementById('smokeState').className = 'state ' + cls;
+    }
+    
+    // Звук
+    if (data.hasError && !lastStatus._errorPlayed) {
+        lastStatus._errorPlayed = true;
+        playEmergencyStop();
+        showToast('⚠️ АВАРИЯ!', 'error');
+    }
+    if (data.status === 'Завершён' && !lastStatus._completePlayed) {
+        lastStatus._completePlayed = true;
+        playRecipeComplete();
+        showToast('🏁 Рецепт завершён!', 'success');
+    }
+    if (data.stage !== lastStatus._lastStage && data.status === 'Работает') {
+        lastStatus._lastStage = data.stage;
+        playStageComplete();
+    }
+    if (data.smoke && data.smoke.stateText === 'Ошибка' && data.smoke.stateText !== lastStatus._smokeState) {
+        lastStatus._smokeState = data.smoke.stateText;
+        playError();
+        showToast('❌ Ошибка дымогенератора!', 'error');
+    }
+    if (data.smoke && data.smoke.stateText === 'Работает' && data.smoke.stateText !== lastStatus._smokeState) {
+        lastStatus._smokeState = data.smoke.stateText;
+        playSuccess();
+        showToast('✅ Дымогенератор запущен!', 'success');
+    }
+    if (data.smoke && data.smoke.stateText === 'Пауза 3 мин' && data.smoke.stateText !== lastStatus._smokeState) {
+        lastStatus._smokeState = data.smoke.stateText;
+        playWarning();
+        showToast('⚠️ Повтор розжига через 3 минуты', 'warning');
+    }
+    
+    if (data.log) {
+        var logDiv = document.getElementById('logContent');
+        var lines = data.log.split('\n');
+        var html = '';
+        for (var i = 0; i < lines.length; i++) {
+            if (lines[i].trim()) {
+                var cls = '';
+                if (lines[i].includes('❌') || lines[i].includes('ОШИБКА') || lines[i].includes('АВАРИЙНАЯ')) cls = 'log-error';
+                else if (lines[i].includes('✅')) cls = 'log-success';
+                else if (lines[i].includes('⚠️')) cls = 'log-warn';
+                html += '<div class="log-entry ' + cls + '">' + lines[i] + '</div>';
+            }
+        }
+        logDiv.innerHTML = html;
+        var panel = document.getElementById('logPanel');
+        if (panel) panel.scrollTop = panel.scrollHeight;
+    }
+}
+
+// ==================== ЦВЕТА ЭТАПОВ ====================
+function updateStageColors() {
+    var rows = document.querySelectorAll('#stageBody tr');
+    var statusBar = document.getElementById('stageStatusBar');
+    if (!statusBar) return;
+    statusBar.innerHTML = '<span class="label">Статус этапов:</span>';
+    rows.forEach(function(row, i) {
+        var num = row.querySelector('.stage-number');
+        if (!num) {
+            var firstTd = row.querySelector('td');
+            if (firstTd) {
+                var newNum = document.createElement('span');
+                newNum.className = 'stage-number';
+                newNum.textContent = (i + 1);
+                firstTd.innerHTML = '';
+                firstTd.appendChild(newNum);
+                num = newNum;
+            }
+        }
+        var status = stageStatus[i] || 'waiting';
+        if (num) {
+            num.className = 'stage-number ' + status;
+        }
+        row.className = 'stage-' + status;
+        
+        var dot = document.createElement('span');
+        dot.className = 'dot ' + status;
+        dot.title = (i + 1) + '. ' + status;
+        statusBar.appendChild(dot);
+    });
+}
+
+// ==================== РЕЦЕПТЫ ====================
 function loadRecipesList() {
     var sel = document.getElementById('recipeSelect');
     if (!sel) return;
@@ -459,22 +450,25 @@ function loadRecipesList() {
 function loadRecipe() {
     var idx = parseInt(document.getElementById('recipeSelect').value);
     currentIdx = idx;
-    var recipe = recipes[idx];
-    if (recipe) {
-        document.getElementById('recipeName').value = recipe.name;
-        document.getElementById('maxTemp').value = recipe.maxCameraTemp;
-        document.getElementById('delta').value = recipe.deltaCelsius;
-        renderStages(recipe.stages);
-        loadRecipesList();
-        document.getElementById('recipeSelect').value = idx;
-    }
+    fetch(ESP32_URL + '/load?idx=' + idx)
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            recipes = data.recipes;
+            var recipe = recipes[idx];
+            document.getElementById('recipeName').value = recipe.name;
+            document.getElementById('maxTemp').value = recipe.maxCameraTemp;
+            document.getElementById('delta').value = recipe.deltaCelsius;
+            renderStages(recipe.stages);
+            loadRecipesList();
+            document.getElementById('recipeSelect').value = idx;
+        })
+        .catch(function(err) { showToast('Ошибка загрузки', 'error'); });
 }
 
 function renderStages(stages) {
     var tbody = document.getElementById('stageBody');
     if (!tbody) return;
     tbody.innerHTML = '';
-    if (!stages) return;
     stages.forEach(function(s, i) {
         var tr = document.createElement('tr');
         tr.className = s.active ? 'stage-active' : 'stage-inactive';
@@ -517,6 +511,33 @@ function getStagesFromUI() {
         };
     });
     return stages;
+}
+
+function saveSettings() {
+    var data = {
+        idx: currentIdx,
+        name: document.getElementById('recipeName').value || 'Рецепт ' + (currentIdx + 1),
+        maxCameraTemp: parseFloat(document.getElementById('maxTemp').value) || 80,
+        deltaCelsius: parseFloat(document.getElementById('delta').value) || 18,
+        stages: getStagesFromUI()
+    };
+    var jsonData = JSON.stringify(data);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', ESP32_URL + '/save', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState == 4) {
+            if (xhr.status == 200) {
+                showToast(xhr.responseText, 'success');
+                recipes[currentIdx] = data;
+                loadRecipesList();
+                document.getElementById('recipeSelect').value = currentIdx;
+            } else {
+                showToast('Ошибка: ' + xhr.status, 'error');
+            }
+        }
+    };
+    xhr.send('data=' + encodeURIComponent(jsonData));
 }
 
 function addStage() {
@@ -577,114 +598,39 @@ function deleteRecipe() {
     for (var i = 0; i < 5; i++) {
         data.stages.push({ active: false, name: 'Этап ' + (i + 1), targetCameraTemp: 0, targetBatonTemp: 0, durationHours: 0, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 });
     }
-    
     var jsonData = JSON.stringify(data);
-    if (isSending) {
-        showToast('⏳ Подождите...', 'warning');
-        return;
-    }
-    
-    try {
-        isSending = true;
-        httpRequest('/api/save', 'POST', { data: jsonData }).then(result => {
-            isSending = false;
-            if (result.success) {
-                showToast('✅ Рецепт удалён', 'success');
-                // Обновляем список
-                recipes[currentIdx] = JSON.parse(jsonData);
-                loadRecipesList();
-            } else {
-                showToast('❌ Ошибка удаления', 'error');
-            }
-        });
-    } catch(e) {
-        isSending = false;
-        showToast('❌ Ошибка', 'error');
-    }
-}
-
-async function runRecipe() {
-    console.log('▶️ ЗАПУСК РЕЦЕПТА');
-    const sent = await sendCommand('start');
-    if (sent) {
-        document.getElementById('runBtn').style.display = 'none';
-        document.getElementById('stopBtn').style.display = 'inline-block';
-    }
-}
-
-async function stopRecipe() {
-    console.log('⏹ ОСТАНОВКА РЕЦЕПТА');
-    const sent = await sendCommand('stop');
-    if (sent) {
-        document.getElementById('runBtn').style.display = 'inline-block';
-        document.getElementById('stopBtn').style.display = 'none';
-    }
-}
-
-// ==================== ИНИЦИАЛИЗАЦИЯ ====================
-function initDemoRecipes() {
-    recipes = [];
-    for (var i = 0; i < 10; i++) {
-        recipes[i] = {
-            name: "Рецепт " + (i + 1),
-            maxCameraTemp: 80,
-            deltaCelsius: 18,
-            stages: []
-        };
-        for (var j = 0; j < 5; j++) {
-            recipes[i].stages[j] = {
-                active: false,
-                name: "Этап " + (j + 1),
-                targetCameraTemp: 0,
-                targetBatonTemp: 0,
-                durationHours: 0,
-                smokeOn: false,
-                waterOn: false,
-                coolMode: 0,
-                coolTargetTemp: 0,
-                coolTimeoutMin: 0,
-                requireHold: false,
-                holdMinutes: 0
-            };
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', ESP32_URL + '/save', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState == 4 && xhr.status == 200) {
+            loadRecipe();
+            loadRecipesList();
+            showToast('✅ Рецепт удалён', 'success');
         }
-    }
-    recipes[0].name = "Грудинка томленая";
-    recipes[0].stages[0] = { active: true, name: "Подсушка", targetCameraTemp: 18, targetBatonTemp: 45, durationHours: 0, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 };
-    recipes[0].stages[1] = { active: true, name: "Дымление", targetCameraTemp: 45, targetBatonTemp: 0, durationHours: 1, smokeOn: true, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 };
-    recipes[0].stages[2] = { active: true, name: "Ферментация", targetCameraTemp: 50, targetBatonTemp: 50, durationHours: 0.5, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 };
-    recipes[0].stages[3] = { active: true, name: "Томление", targetCameraTemp: 73, targetBatonTemp: 73, durationHours: 6, smokeOn: false, waterOn: false, coolMode: 0, coolTargetTemp: 0, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 };
-    recipes[0].stages[4] = { active: true, name: "Охлаждение", targetCameraTemp: 15, targetBatonTemp: 15, durationHours: 0, smokeOn: false, waterOn: true, coolMode: 1, coolTargetTemp: 15, coolTimeoutMin: 0, requireHold: false, holdMinutes: 0 };
-    
-    loadRecipesList();
-    var recipe = recipes[0];
-    document.getElementById('recipeName').value = recipe.name;
-    document.getElementById('maxTemp').value = recipe.maxCameraTemp;
-    document.getElementById('delta').value = recipe.deltaCelsius;
-    renderStages(recipe.stages);
+    };
+    xhr.send('data=' + encodeURIComponent(jsonData));
+}
+
+function runRecipe() {
+    document.getElementById('runBtn').style.display = 'none';
+    document.getElementById('stopBtn').style.display = 'inline-block';
+    fetch(ESP32_URL + '/run').catch(function() {});
+}
+
+function stopRecipe() {
+    document.getElementById('runBtn').style.display = 'inline-block';
+    document.getElementById('stopBtn').style.display = 'none';
+    fetch(ESP32_URL + '/stop').catch(function() {});
 }
 
 // ==================== ЗАПУСК ====================
-initDemoRecipes();
+loadRecipesList();
+loadRecipe();
 
-// Автоматическая проверка связи при загрузке
-setTimeout(function() {
-    testConnection();
-    // Запускаем периодическое обновление статуса
-    if (statusInterval) {
-        clearInterval(statusInterval);
-    }
-    statusInterval = setInterval(function() {
-        if (!isSending) {
-            updateStatusFromHTTP();
-        }
-    }, 5000);
-}, 1000);
-
-window.addEventListener('beforeunload', function() {
-    if (statusInterval) {
-        clearInterval(statusInterval);
-    }
-});
+setInterval(function() {
+    loadStatus();
+}, 2000);
 </script>
 </body>
 </html>
