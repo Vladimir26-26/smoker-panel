@@ -10,7 +10,6 @@
         body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;margin:0;padding:10px;font-size:14px;}
         .container{max-width:1200px;margin:0 auto;background:white;padding:15px;border-radius:12px;}
         h1{color:#2c3e50;font-size:24px;}
-        
         .btn{padding:8px 12px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;margin:4px;min-height:44px;min-width:44px;touch-action:manipulation;}
         .btn-save{background:#2196F3;color:white;}
         .btn-run{background:#4CAF50;color:white;}
@@ -18,14 +17,12 @@
         .btn-add{background:#FF9800;color:white;}
         .btn-danger{background:#f44336;color:white;}
         .btn-small{padding:5px 10px;font-size:12px;min-height:34px;min-width:34px;}
-        
         .status-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin:10px 0;}
         .status-item{background:#f8f9fa;padding:8px 10px;border-radius:6px;border-left:4px solid #4CAF50;}
         .status-item .label{font-size:0.65em;color:#888;}
         .status-item .value{font-size:1em;font-weight:bold;}
         .status-item.heater-on{border-left-color:#ff6b6b;}
         .status-item.heater-off{border-left-color:#555;}
-        
         .table-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:8px -5px;padding:0 5px;}
         .stage-table{min-width:650px;width:100%;border-collapse:collapse;font-size:11px;}
         .stage-table th{background:#2c3e50;color:white;padding:6px 3px;text-align:center;white-space:nowrap;}
@@ -34,7 +31,6 @@
         .stage-table input[type=text]{width:60px;padding:2px;border:1px solid #ddd;border-radius:3px;font-size:10px;text-align:center;}
         .stage-table select{padding:2px;border:1px solid #ddd;border-radius:3px;font-size:9px;}
         .stage-table input[type=checkbox]{width:14px;height:14px;cursor:pointer;}
-        
         .stage-active{background:#e8f5e9;}
         .stage-inactive{opacity:0.4;}
         .stage-number{font-weight:bold;padding:2px 6px;border-radius:50%;display:inline-block;font-size:11px;}
@@ -42,7 +38,6 @@
         .stage-number.done{background:#2196F3;color:white;}
         .stage-number.error{background:#f44336;color:white;}
         .stage-number.waiting{background:#999;color:white;}
-        
         .smoke-panel{background:#263238;color:white;padding:12px;border-radius:8px;margin:10px 0;}
         .smoke-panel h3{color:#ffd93d;margin:0 0 8px 0;font-size:16px;}
         .smoke-status{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
@@ -53,7 +48,6 @@
         .smoke-off{background:#555;}
         .smoke-error{background:#c62828;}
         .smoke-wait{background:#f57c00;}
-        
         .stage-status-bar{display:flex;gap:6px;flex-wrap:wrap;margin:5px 0;align-items:center;}
         .stage-status-bar .dot{width:12px;height:12px;border-radius:50%;display:inline-block;border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,0.3);}
         .stage-status-bar .dot.active{background:#4CAF50;}
@@ -61,26 +55,21 @@
         .stage-status-bar .dot.error{background:#f44336;}
         .stage-status-bar .dot.waiting{background:#999;}
         .stage-status-bar .label{font-size:10px;color:#666;font-weight:bold;}
-        
         .log-panel{background:#1a1a2e;color:#00ff88;padding:8px;border-radius:8px;max-height:200px;overflow-y:auto;font-size:11px;font-family:'Courier New',monospace;margin:10px 0;}
         .log-panel .log-entry{padding:2px 0;border-bottom:1px solid #333;white-space:pre-wrap;word-wrap:break-word;}
         .log-panel .log-error{color:#ff6b6b;}
         .log-panel .log-success{color:#69db7c;}
         .log-panel .log-warn{color:#ffd93d;}
-        
         .flex{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
         .mt-10{margin-top:10px;}
-        
         .toast{position:fixed;bottom:20px;right:20px;padding:12px 20px;border-radius:8px;color:white;z-index:999;display:none;font-weight:600;font-size:13px;max-width:90%;}
         .toast-success{background:#4CAF50;}
         .toast-error{background:#f44336;}
         .toast-warning{background:#FF9800;}
-        
         .mqtt-status{display:inline-block;padding:2px 10px;border-radius:4px;font-size:11px;font-weight:bold;}
         .mqtt-on{background:#4CAF50;color:white;}
         .mqtt-off{background:#f44336;color:white;}
         .mqtt-wait{background:#FF9800;color:white;}
-        
         @media(max-width:768px){
             body{padding:5px;font-size:12px;}
             .container{padding:8px;}
@@ -101,7 +90,6 @@
             .log-panel{max-height:120px;font-size:10px;}
             .toast{font-size:11px;padding:8px 14px;bottom:10px;right:10px;left:10px;}
         }
-        
         @media(max-width:480px){
             .status-grid{grid-template-columns:repeat(2,1fr);gap:3px;}
             .stage-table{min-width:450px;font-size:9px;}
@@ -219,7 +207,7 @@ const MAX_LOG_ENTRIES = 100;
 let isSending = false;
 let statusInterval = null;
 
-// ==================== MQTT ПОДКЛЮЧЕНИЕ ====================
+// ==================== MQTT ====================
 const client = mqtt.connect(mqttBroker, mqttOptions);
 
 client.on('connect', function() {
@@ -247,7 +235,7 @@ client.on('connect', function() {
         if (mqttConnected && !isSending) {
             client.publish('koptilnya/command', 'status');
         }
-    }, 5000);
+    }, 8000);
 });
 
 client.on('offline', function() {
@@ -332,6 +320,8 @@ function sendMQTTCommand(cmd) {
         client.publish('koptilnya/command', cmd);
         console.log('📤 MQTT команда:', cmd);
         document.getElementById('espStatus').textContent = '🔍 ESP: команда отправлена';
+        
+        // Если команда start/stop, снимаем блокировку через 2 секунды
         setTimeout(function() {
             isSending = false;
             document.getElementById('espStatus').textContent = '🔍 ESP: онлайн';
