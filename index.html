@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>Умная коптильня</title>
-    
-    <!-- Подключаем MQTT библиотеку -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     
     <style>
@@ -230,8 +228,8 @@ if (!checkPassword()) {
 }
 
 // ==================== MQTT НАСТРОЙКИ ====================
-// ВАЖНО! ИСПОЛЬЗУЕМ wss:// ДЛЯ HTTPS СТРАНИЦЫ
-const MQTT_BROKER = 'wss://broker.hivemq.com:8884/mqtt';
+// ИСПОЛЬЗУЕМ Mosquitto - более стабильный в РФ
+const MQTT_BROKER = 'wss://test.mosquitto.org:8081';
 const MQTT_TOPIC_STATUS = 'smoker/status';
 const MQTT_TOPIC_COMMAND = 'smoker/command';
 
@@ -246,28 +244,43 @@ let lastStatus = {};
 // ==================== ПОДКЛЮЧЕНИЕ К MQTT ====================
 function connectMQTT() {
     try {
+        console.log('🔄 Подключение к MQTT (Mosquitto)...');
+        
         mqttClient = mqtt.connect(MQTT_BROKER, {
             reconnectPeriod: 5000,
             connectTimeout: 30000,
-            keepalive: 60,
+            keepalive: 30,
+            clean: true,
         });
         
         mqttClient.on('connect', function() {
             console.log('✅ MQTT подключено к ' + MQTT_BROKER);
             updateConnectionStatus(true, 'MQTT');
-            mqttClient.subscribe(MQTT_TOPIC_STATUS);
-            mqttClient.publish(MQTT_TOPIC_COMMAND, 'status');
+            
+            mqttClient.subscribe(MQTT_TOPIC_STATUS, function(err) {
+                if (!err) {
+                    console.log('✅ Подписка на ' + MQTT_TOPIC_STATUS + ' успешна');
+                }
+            });
+            
+            setTimeout(function() {
+                mqttClient.publish(MQTT_TOPIC_COMMAND, 'status');
+                console.log('📤 Запрос статуса отправлен');
+            }, 500);
+            
             showToast('✅ MQTT подключён!', 'success');
             loadRecipe();
         });
         
         mqttClient.on('message', function(topic, message) {
+            console.log('📥 Получено сообщение от ' + topic);
             if (topic === MQTT_TOPIC_STATUS) {
                 try {
                     const data = JSON.parse(message.toString());
+                    console.log('📊 Данные:', data);
                     updateUI(data);
                 } catch(e) {
-                    console.log('❌ Ошибка парсинга JSON:', e);
+                    console.log('❌ Ошибка парсинга:', e);
                 }
             }
         });
@@ -280,11 +293,10 @@ function connectMQTT() {
         mqttClient.on('close', function() {
             console.log('⚠️ MQTT отключено');
             updateConnectionStatus(false);
-            setTimeout(connectMQTT, 5000);
         });
         
     } catch(e) {
-        console.log('❌ Ошибка подключения MQTT:', e);
+        console.log('❌ Ошибка подключения:', e);
         updateConnectionStatus(false);
         setTimeout(connectMQTT, 5000);
     }
@@ -293,7 +305,7 @@ function connectMQTT() {
 function reconnectMQTT() {
     if (mqttClient) {
         try {
-            mqttClient.end();
+            mqttClient.end(true);
         } catch(e) {}
         mqttClient = null;
     }
@@ -303,9 +315,11 @@ function reconnectMQTT() {
 
 function sendCommand(command) {
     if (mqttClient && mqttClient.connected) {
+        console.log('📤 Отправка команды:', command);
         mqttClient.publish(MQTT_TOPIC_COMMAND, command);
         showToast('✅ Команда отправлена: ' + command, 'success');
     } else {
+        console.log('❌ Нет соединения');
         showToast('❌ Нет соединения с MQTT', 'error');
         reconnectMQTT();
     }
@@ -400,6 +414,7 @@ function showToast(msg, type) {
 // ==================== UI ====================
 function updateUI(data) {
     if (!data) return;
+    
     document.getElementById('statusText').innerText = data.status || 'Ожидание';
     document.getElementById('stageText').innerText = data.stage || '--';
     document.getElementById('t_cam').innerText = (data.cam || 0).toFixed(1) + '°C';
@@ -450,36 +465,6 @@ function updateUI(data) {
         else if (data.smoke.stateText === 'Работает') cls = 'smoke-on';
         else if (data.smoke.stateText && (data.smoke.stateText.includes('Розжиг') || data.smoke.stateText.includes('Пауза'))) cls = 'smoke-wait';
         document.getElementById('smokeState').className = 'state ' + cls;
-    }
-    
-    if (data.hasError && !lastStatus._errorPlayed) {
-        lastStatus._errorPlayed = true;
-        playEmergencyStop();
-        showToast('⚠️ АВАРИЯ!', 'error');
-    }
-    if (data.status === 'Завершён' && !lastStatus._completePlayed) {
-        lastStatus._completePlayed = true;
-        playRecipeComplete();
-        showToast('🏁 Рецепт завершён!', 'success');
-    }
-    if (data.stage !== lastStatus._lastStage && data.status === 'Работает') {
-        lastStatus._lastStage = data.stage;
-        playStageComplete();
-    }
-    if (data.smoke && data.smoke.stateText === 'Ошибка' && data.smoke.stateText !== lastStatus._smokeState) {
-        lastStatus._smokeState = data.smoke.stateText;
-        playError();
-        showToast('❌ Ошибка дымогенератора!', 'error');
-    }
-    if (data.smoke && data.smoke.stateText === 'Работает' && data.smoke.stateText !== lastStatus._smokeState) {
-        lastStatus._smokeState = data.smoke.stateText;
-        playSuccess();
-        showToast('✅ Дымогенератор запущен!', 'success');
-    }
-    if (data.smoke && data.smoke.stateText === 'Пауза 3 мин' && data.smoke.stateText !== lastStatus._smokeState) {
-        lastStatus._smokeState = data.smoke.stateText;
-        playWarning();
-        showToast('⚠️ Повтор розжига через 3 минуты', 'warning');
     }
     
     if (data.log) {
